@@ -6,7 +6,9 @@ import ladysnake.illuminations.client.config.Config;
 import ladysnake.illuminations.client.data.IlluminationData;
 import net.minecraft.block.Blocks;
 import net.minecraft.client.network.AbstractClientPlayerEntity;
+import net.minecraft.client.network.ClientPlayerEntity;
 import net.minecraft.client.world.ClientWorld;
+import net.minecraft.entity.Entity;
 import net.minecraft.registry.DynamicRegistryManager;
 import net.minecraft.registry.RegistryKey;
 import net.minecraft.registry.RegistryKeys;
@@ -21,6 +23,7 @@ import net.minecraft.world.World;
 import net.minecraft.world.biome.Biome;
 import net.minecraft.world.dimension.DimensionType;
 import org.spongepowered.asm.mixin.Mixin;
+import org.spongepowered.asm.mixin.Unique;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Coerce;
 import org.spongepowered.asm.mixin.injection.Inject;
@@ -62,6 +65,7 @@ public abstract class ClientWorldMixin extends World {
         }
     }
 
+    @Unique
     private void spawnParticles(BlockPos.Mutable pos, ImmutableSet<IlluminationData> illuminationDataSet) {
         if (illuminationDataSet != null) {
             for (IlluminationData illuminationData : illuminationDataSet) {
@@ -73,9 +77,11 @@ public abstract class ClientWorldMixin extends World {
         }
     }
 
-    @Inject(method = "addPlayer", at = @At(value = "RETURN"))
-    public void addPlayer(int id, AbstractClientPlayerEntity player, CallbackInfo ci) {
-        Illuminations.loadPlayerCosmetics();
+    @Inject(method = "addEntity", at = @At(value = "RETURN"))
+    public void addEntity(Entity entity, CallbackInfo ci) {
+        if (entity instanceof ClientPlayerEntity){
+            Illuminations.loadPlayerCosmetics();
+        }
     }
 
 }

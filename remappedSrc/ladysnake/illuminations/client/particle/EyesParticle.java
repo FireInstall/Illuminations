@@ -12,10 +12,17 @@ import net.minecraft.client.world.ClientWorld;
 import net.minecraft.entity.LivingEntity;
 import net.minecraft.entity.effect.StatusEffects;
 import net.minecraft.particle.DefaultParticleType;
-import net.minecraft.util.math.*;
+import net.minecraft.util.math.BlockPos;
+import net.minecraft.util.math.MathHelper;
+import net.minecraft.util.math.Vec3d;
+import org.joml.Quaternionf;
+import org.joml.Vector3f;
 
 import java.util.Random;
 import java.util.concurrent.ThreadLocalRandom;
+
+import static java.lang.Math.cos;
+import static java.lang.Math.sin;
 
 public class EyesParticle extends SpriteBillboardParticle {
     private static final Random RANDOM = new Random();
@@ -47,24 +54,24 @@ public class EyesParticle extends SpriteBillboardParticle {
         float f = (float) (MathHelper.lerp(tickDelta, this.prevPosX, this.x) - vec3d.getX());
         float g = (float) (MathHelper.lerp(tickDelta, this.prevPosY, this.y) - vec3d.getY());
         float h = (float) (MathHelper.lerp(tickDelta, this.prevPosZ, this.z) - vec3d.getZ());
-        Quaternion quaternion2;
+        Quaternionf quaternion2;
         if (this.angle == 0.0F) {
             quaternion2 = camera.getRotation();
         } else {
-            quaternion2 = new Quaternion(camera.getRotation());
+            quaternion2 = new Quaternionf(camera.getRotation());
             float i = MathHelper.lerp(tickDelta, this.prevAngle, this.angle);
-            quaternion2.hamiltonProduct(Vec3f.POSITIVE_Z.getRadialQuaternion(i));
+            quaternion2.mul(new Quaternionf(0, 0, sin(i / 2.0F), cos(i / 2.0F)));
         }
 
-        Vec3f Vec3f = new Vec3f(-1.0F, -1.0F, 0.0F);
+        Vector3f Vec3f = new Vector3f(-1.0F, -1.0F, 0.0F);
         Vec3f.rotate(quaternion2);
-        Vec3f[] Vec3fs = new Vec3f[]{new Vec3f(-1.0F, -1.0F, 0.0F), new Vec3f(-1.0F, 1.0F, 0.0F), new Vec3f(1.0F, 1.0F, 0.0F), new Vec3f(1.0F, -1.0F, 0.0F)};
+        Vector3f[] Vec3fs = new Vector3f[]{new Vector3f(-1.0F, -1.0F, 0.0F), new Vector3f(-1.0F, 1.0F, 0.0F), new Vector3f(1.0F, 1.0F, 0.0F), new Vector3f(1.0F, -1.0F, 0.0F)};
         float j = this.getSize(tickDelta);
 
         for (int k = 0; k < 4; ++k) {
-            Vec3f Vec3f2 = Vec3fs[k];
+            Vector3f Vec3f2 = Vec3fs[k];
             Vec3f2.rotate(quaternion2);
-            Vec3f2.scale(j);
+            Vec3f2.mul(j);
             Vec3f2.add(f, g, h);
         }
 
@@ -75,10 +82,10 @@ public class EyesParticle extends SpriteBillboardParticle {
         int l = 15728880;
         float a = Math.min(1f, Math.max(0f, this.alpha));
 
-        vertexConsumer.vertex(Vec3fs[0].getX(), Vec3fs[0].getY(), Vec3fs[0].getZ()).texture(maxU, maxV).color(red, green, blue, alpha).light(l).next();
-        vertexConsumer.vertex(Vec3fs[1].getX(), Vec3fs[1].getY(), Vec3fs[1].getZ()).texture(maxU, minV).color(red, green, blue, alpha).light(l).next();
-        vertexConsumer.vertex(Vec3fs[2].getX(), Vec3fs[2].getY(), Vec3fs[2].getZ()).texture(minU, minV).color(red, green, blue, alpha).light(l).next();
-        vertexConsumer.vertex(Vec3fs[3].getX(), Vec3fs[3].getY(), Vec3fs[3].getZ()).texture(minU, maxV).color(red, green, blue, alpha).light(l).next();
+        vertexConsumer.vertex(Vec3fs[0].x(), Vec3fs[0].y(), Vec3fs[0].z()).texture(maxU, maxV).color(red, green, blue, alpha).light(l).next();
+        vertexConsumer.vertex(Vec3fs[1].x(), Vec3fs[1].y(), Vec3fs[1].z()).texture(maxU, minV).color(red, green, blue, alpha).light(l).next();
+        vertexConsumer.vertex(Vec3fs[2].x(), Vec3fs[2].y(), Vec3fs[2].z()).texture(minU, minV).color(red, green, blue, alpha).light(l).next();
+        vertexConsumer.vertex(Vec3fs[3].x(), Vec3fs[3].y(), Vec3fs[3].z()).texture(minU, maxV).color(red, green, blue, alpha).light(l).next();
     }
 
     public ParticleTextureSheet getType() {
@@ -113,7 +120,7 @@ public class EyesParticle extends SpriteBillboardParticle {
         this.prevPosZ = this.z;
 
         // disappear if light or if player gets too close
-        if (this.maxAge > this.age && (world.getLightLevel(new BlockPos(x, y, z)) > 0 || world.getClosestPlayer(x, y, z, Illuminations.EYES_VANISHING_DISTANCE, false) != null)) {
+        if (this.maxAge > this.age && (world.getLightLevel(new BlockPos((int) x, (int) y, (int) z)) > 0 || world.getClosestPlayer(x, y, z, Illuminations.EYES_VANISHING_DISTANCE, false) != null)) {
             this.maxAge = this.age;
         }
     }

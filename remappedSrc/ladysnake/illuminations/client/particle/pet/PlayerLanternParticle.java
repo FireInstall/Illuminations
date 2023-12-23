@@ -19,8 +19,11 @@ import net.minecraft.particle.DefaultParticleType;
 import net.minecraft.util.Identifier;
 import net.minecraft.util.math.MathHelper;
 import net.minecraft.util.math.Vec3d;
-import net.minecraft.util.math.Vec3f;
 import org.jetbrains.annotations.Nullable;
+import org.joml.Quaternionf;
+
+import static org.joml.Math.cos;
+import static org.joml.Math.sin;
 
 public class PlayerLanternParticle extends Particle {
     public final Identifier texture;
@@ -66,8 +69,10 @@ public class PlayerLanternParticle extends Particle {
 
         MatrixStack matrixStack = new MatrixStack();
         matrixStack.translate(f, g, h);
-        matrixStack.multiply(Vec3f.POSITIVE_Y.getDegreesQuaternion(MathHelper.lerp(g, this.prevYaw, this.yaw) - 180));
-        matrixStack.multiply(Vec3f.POSITIVE_X.getDegreesQuaternion(MathHelper.lerp(g, this.prevPitch, this.pitch)));
+        float rotationAngle = (MathHelper.lerp(g, this.prevYaw, this.yaw) - 180) * 0.017453292F;
+        matrixStack.multiply(new Quaternionf(0, sin(rotationAngle / 2.0F), 0, cos(rotationAngle / 2.0F)));
+        rotationAngle = MathHelper.lerp(g, this.prevPitch, this.pitch) * 0.017453292F;
+        matrixStack.multiply(new Quaternionf(sin(rotationAngle / 2.0F), 0, 0, cos(rotationAngle / 2.0F)));
         matrixStack.scale(0.5F, -0.5F, 0.5F);
         matrixStack.translate(0, -1, 0);
         VertexConsumerProvider.Immediate immediate = MinecraftClient.getInstance().getBufferBuilders().getEntityVertexConsumers();

@@ -48,8 +48,8 @@ public class PumpkinSpiritParticle extends WillOWispParticle {
                 this.world.addParticle(new WispTrailParticleEffect(this.red, this.green, this.blue, this.redEvolution, this.greenEvolution, this.blueEvolution), this.x + random.nextGaussian() / 15, this.y + random.nextGaussian() / 15, this.z + random.nextGaussian() / 15, 0, 0, 0);
                 this.world.addParticle(new BlockStateParticleEffect(ParticleTypes.BLOCK, Blocks.JACK_O_LANTERN.getDefaultState()), this.x + random.nextGaussian() / 10, this.y + random.nextGaussian() / 10, this.z + random.nextGaussian() / 10, random.nextGaussian() / 20, random.nextGaussian() / 20, random.nextGaussian() / 20);
             }
-            this.world.playSound(new BlockPos(this.x, this.y, this.z), SoundEvents.ENTITY_VEX_DEATH, SoundCategory.AMBIENT, 1.0f, 0.8f, true);
-            this.world.playSound(new BlockPos(this.x, this.y, this.z), SoundEvents.BLOCK_WOOD_BREAK, SoundCategory.AMBIENT, 1.0f, 1.0f, true);
+            this.world.playSound(this.x, this.y, this.z, SoundEvents.ENTITY_VEX_DEATH, SoundCategory.AMBIENT, 1.0f, 0.8f, true);
+            this.world.playSound(this.x, this.y, this.z, SoundEvents.BLOCK_WOOD_BREAK, SoundCategory.AMBIENT, 1.0f, 1.0f, true);
             this.markDead();
         }
 
@@ -78,15 +78,15 @@ public class PumpkinSpiritParticle extends WillOWispParticle {
             this.world.addParticle(new WispTrailParticleEffect(this.red, this.green, this.blue, this.redEvolution, this.greenEvolution, this.blueEvolution), this.x + random.nextGaussian() / 15, this.y + random.nextGaussian() / 15, this.z + random.nextGaussian() / 15, 0, 0, 0);
         }
 
-        if (!new BlockPos(x, y, z).equals(this.getTargetPosition())) {
+        if (!new BlockPos((int) x, (int) y, (int) z).equals(this.getTargetPosition())) {
             this.move(velocityX, velocityY, velocityZ);
         }
 
         if (random.nextInt(100) == 0) {
-            this.world.playSound(new BlockPos(this.x, this.y, this.z), SoundEvents.ENTITY_VEX_AMBIENT, SoundCategory.AMBIENT, 1.0f, 0.8f, true);
+            this.world.playSound(this.x, this.y, this.z, SoundEvents.ENTITY_VEX_AMBIENT, SoundCategory.AMBIENT, 1.0f, 0.8f, true);
         }
 
-        BlockPos pos = new BlockPos(this.x, this.y, this.z);
+        BlockPos pos = new BlockPos((int) this.x, (int) this.y, (int) this.z);
         if (!this.world.getBlockState(pos).isAir()) {
             if (timeInSolid > -1) {
                 timeInSolid += 1;
@@ -128,7 +128,7 @@ public class PumpkinSpiritParticle extends WillOWispParticle {
     }
 
     public BlockPos getTargetPosition() {
-        return new BlockPos(this.xTarget, this.yTarget + 0.5, this.zTarget);
+        return new BlockPos((int) this.xTarget, (int) (this.yTarget + 0.5), (int) this.zTarget);
     }
 
     private void selectBlockTarget() {
@@ -137,7 +137,7 @@ public class PumpkinSpiritParticle extends WillOWispParticle {
         this.yTarget = this.y + random.nextGaussian() * 10;
         this.zTarget = this.z + random.nextGaussian() * 10;
 
-        BlockPos targetPos = new BlockPos(this.xTarget, this.yTarget, this.zTarget);
+        BlockPos targetPos = new BlockPos((int) this.xTarget, (int) this.yTarget, (int) this.zTarget);
         if (this.world.getBlockState(targetPos).isFullCube(world, targetPos)) {
             targetChangeCooldown = 0;
             return;

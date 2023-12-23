@@ -7,11 +7,18 @@ import net.minecraft.client.render.Camera;
 import net.minecraft.client.render.VertexConsumer;
 import net.minecraft.client.world.ClientWorld;
 import net.minecraft.particle.DefaultParticleType;
-import net.minecraft.tag.FluidTags;
-import net.minecraft.util.math.*;
+import net.minecraft.registry.tag.FluidTags;
+import net.minecraft.util.math.BlockPos;
+import net.minecraft.util.math.MathHelper;
+import net.minecraft.util.math.Vec3d;
+import org.joml.Quaternionf;
+import org.joml.Vector3f;
 
 import java.util.Random;
 import java.util.concurrent.ThreadLocalRandom;
+
+import static java.lang.Math.cos;
+import static java.lang.Math.sin;
 
 public class PrismarineCrystalParticle extends SpriteBillboardParticle {
     private static final Random RANDOM = new Random();
@@ -49,28 +56,38 @@ public class PrismarineCrystalParticle extends SpriteBillboardParticle {
         float f = (float) (MathHelper.lerp(tickDelta, this.prevPosX, this.x) - vec3d.getX());
         float g = (float) (MathHelper.lerp(tickDelta, this.prevPosY, this.y) - vec3d.getY());
         float h = (float) (MathHelper.lerp(tickDelta, this.prevPosZ, this.z) - vec3d.getZ());
-        Quaternion quaternion2;
+        Quaternionf quaternion2;
         if (this.angle == 0.0F) {
             quaternion2 = camera.getRotation();
         } else {
-            quaternion2 = new Quaternion(camera.getRotation());
+            quaternion2 = new Quaternionf(camera.getRotation());
             float i = MathHelper.lerp(tickDelta, this.prevAngle, this.angle);
-            quaternion2.hamiltonProduct(Vec3f.POSITIVE_Z.getDegreesQuaternion(i));
+            float rotationAngle = i * 0.017453292F;
+            quaternion2.mul(new Quaternionf(0, 0, sin(rotationAngle / 2.0F), cos(rotationAngle / 2.0F)));
         }
 
-        Vec3f Vec3f = new Vec3f(-1.0F, -1.0F, 0.0F);
+        Vector3f Vec3f = new Vector3f(-1.0F, -1.0F, 0.0F);
         Vec3f.rotate(quaternion2);
-        Vec3f[] Vec3fs = new Vec3f[]{new Vec3f(-1.0F, -1.0F, 0.0F), new Vec3f(-1.0F, 1.0F, 0.0F), new Vec3f(1.0F, 1.0F, 0.0F), new Vec3f(1.0F, -1.0F, 0.0F)};
+        Vector3f[] Vec3fs = new Vector3f[]{new Vector3f(-1.0F, -1.0F, 0.0F), new Vector3f(-1.0F, 1.0F, 0.0F), new Vector3f(1.0F, 1.0F, 0.0F), new Vector3f(1.0F, -1.0F, 0.0F)};
         float j = this.getSize(tickDelta);
 
         for (int k = 0; k < 4; ++k) {
-            Vec3f Vec3f2 = Vec3fs[k];
+            Vector3f Vec3f2 = Vec3fs[k];
             if (this.onGround) {
-                Vec3f2.rotate(new Quaternion(90f, 0f, quaternion2.getZ(), true));
+
+                float x = 90f * 0.017453292F;
+                float z = quaternion2.z() * 0.017453292F;
+
+                double f2 = sin(0.5F * x);
+                double g2 = cos(0.5F * x);
+                double j2 = sin(0.5F * z);
+                double k2 = cos(0.5F * z);
+
+                Vec3f2.rotate(new Quaternionf((float) (f * k2), (float) (- f2 * j2), (float) (g2 * j2), (float) (g2 * k2)));
             } else {
                 Vec3f2.rotate(quaternion2);
             }
-            Vec3f2.scale(j);
+            Vec3f2.mul(j);
             Vec3f2.add(f, g + this.groundOffset, h);
         }
 
@@ -80,10 +97,10 @@ public class PrismarineCrystalParticle extends SpriteBillboardParticle {
         float maxV = this.getMaxV();
         int l = 15728880;
 
-        vertexConsumer.vertex(Vec3fs[0].getX(), Vec3fs[0].getY(), Vec3fs[0].getZ()).texture(maxU, maxV).color(red, green, blue, alpha).light(l).next();
-        vertexConsumer.vertex(Vec3fs[1].getX(), Vec3fs[1].getY(), Vec3fs[1].getZ()).texture(maxU, minV).color(red, green, blue, alpha).light(l).next();
-        vertexConsumer.vertex(Vec3fs[2].getX(), Vec3fs[2].getY(), Vec3fs[2].getZ()).texture(minU, minV).color(red, green, blue, alpha).light(l).next();
-        vertexConsumer.vertex(Vec3fs[3].getX(), Vec3fs[3].getY(), Vec3fs[3].getZ()).texture(minU, maxV).color(red, green, blue, alpha).light(l).next();
+        vertexConsumer.vertex(Vec3fs[0].x(), Vec3fs[0].y(), Vec3fs[0].z()).texture(maxU, maxV).color(red, green, blue, alpha).light(l).next();
+        vertexConsumer.vertex(Vec3fs[1].x(), Vec3fs[1].y(), Vec3fs[1].z()).texture(maxU, minV).color(red, green, blue, alpha).light(l).next();
+        vertexConsumer.vertex(Vec3fs[2].x(), Vec3fs[2].y(), Vec3fs[2].z()).texture(minU, minV).color(red, green, blue, alpha).light(l).next();
+        vertexConsumer.vertex(Vec3fs[3].x(), Vec3fs[3].y(), Vec3fs[3].z()).texture(minU, maxV).color(red, green, blue, alpha).light(l).next();
     }
 
     public ParticleTextureSheet getType() {
@@ -99,7 +116,7 @@ public class PrismarineCrystalParticle extends SpriteBillboardParticle {
         this.prevPosY = this.y;
         this.prevPosZ = this.z;
 
-        if (this.world.getFluidState(new BlockPos(this.x, this.y, this.z)).isIn(FluidTags.WATER)) {
+        if (this.world.getFluidState(new BlockPos((int) this.x, (int) this.y, (int) this.z)).isIn(FluidTags.WATER)) {
             this.move(this.velocityX, this.velocityY, this.velocityZ);
         } else {
             this.move(this.velocityX, this.velocityY, this.velocityZ);
@@ -116,7 +133,7 @@ public class PrismarineCrystalParticle extends SpriteBillboardParticle {
             }
         }
 
-        this.red = 0.8f + (float) Math.sin(this.age / 100f) * 0.2f;
+        this.red = 0.8f + (float) sin(this.age / 100f) * 0.2f;
 //        this.blue = 0.9f + (float) Math.cos(this.age/100f) * 0.1f;
 
         this.prevAngle = this.angle;
@@ -127,7 +144,7 @@ public class PrismarineCrystalParticle extends SpriteBillboardParticle {
         }
 
         if (this.velocityY != 0) {
-            this.angle += Math.PI * Math.sin(rotationFactor * this.age) / 2;
+            this.angle += Math.PI * sin(rotationFactor * this.age) / 2;
         }
     }
 

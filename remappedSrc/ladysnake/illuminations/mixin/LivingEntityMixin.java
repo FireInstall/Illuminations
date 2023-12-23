@@ -30,10 +30,10 @@ public abstract class LivingEntityMixin extends Entity {
 
     @Inject(method = "onDeath", at = @At("RETURN"))
     public void onDeath(DamageSource source, CallbackInfo callbackInfo) {
-        if (this.isUndead() && random.nextInt(5) == 0 && Illuminations.isNightTime(world) && ((Config.getHalloweenFeatures() == HalloweenFeatures.ENABLE && LocalDate.now().getMonth() == Month.OCTOBER) || Config.getHalloweenFeatures() == HalloweenFeatures.ALWAYS)) {
-            this.world.playSound(null, this.getBlockPos(), SoundEvents.ENTITY_VEX_CHARGE, SoundCategory.AMBIENT, 1.0f, 0.8f);
+        if (this.isUndead() && random.nextInt(5) == 0 && Illuminations.isNightTime(this.method_48926()) && ((Config.getHalloweenFeatures() == HalloweenFeatures.ENABLE && LocalDate.now().getMonth() == Month.OCTOBER) || Config.getHalloweenFeatures() == HalloweenFeatures.ALWAYS)) {
+            this.method_48926().playSound(null, this.getBlockPos(), SoundEvents.ENTITY_VEX_CHARGE, SoundCategory.AMBIENT, 1.0f, 0.8f);
 
-            world.addParticle(Illuminations.POLTERGEIST, true, this.getX() + 0.5, this.getEyeY(), this.getZ(), 0f, 0f, 0f);
+            this.method_48926().addParticle(Illuminations.POLTERGEIST, true, this.getX() + 0.5, this.getEyeY(), this.getZ(), 0f, 0f, 0f);
         }
     }
 }

@@ -8,11 +8,14 @@ import net.minecraft.client.render.VertexConsumer;
 import net.minecraft.client.world.ClientWorld;
 import net.minecraft.particle.DefaultParticleType;
 import net.minecraft.util.math.MathHelper;
-import net.minecraft.util.math.Quaternion;
 import net.minecraft.util.math.Vec3d;
-import net.minecraft.util.math.Vec3f;
+import org.joml.Quaternionf;
+import org.joml.Vector3f;
 
 import java.util.Random;
+
+import static java.lang.Math.cos;
+import static java.lang.Math.sin;
 
 public class AutumnLeavesParticle extends SpriteBillboardParticle {
     private static final Random RANDOM = new Random();
@@ -47,24 +50,40 @@ public class AutumnLeavesParticle extends SpriteBillboardParticle {
         float f = (float) (MathHelper.lerp(tickDelta, this.prevPosX, this.x) - vec3d.getX());
         float g = (float) (MathHelper.lerp(tickDelta, this.prevPosY, this.y) - vec3d.getY());
         float h = (float) (MathHelper.lerp(tickDelta, this.prevPosZ, this.z) - vec3d.getZ());
-        Quaternion quaternion2;
+        Quaternionf quaternion2;
         if (this.angle == 0.0F) {
             quaternion2 = camera.getRotation();
         } else {
-            quaternion2 = new Quaternion(camera.getRotation());
-            float i = this.angle;
-            quaternion2.hamiltonProduct(Vec3f.POSITIVE_Z.getDegreesQuaternion(i));
+            quaternion2 = new Quaternionf(camera.getRotation());
+
+            // degreesQuaternion
+            double i = this.angle * 0.017453292F;
+            Quaternionf other = new Quaternionf(0, 0, sin(i / 2.0F), cos(i / 2.0F));
+
+            // hamiltonProduct
+            float x1 = quaternion2.x();
+            float y1 = quaternion2.y();
+            float z1 = quaternion2.z();
+            float w1 = quaternion2.w();
+            float x2 = other.x();
+            float y2 = other.y();
+            float z2 = other.z();
+            float w2 = other.w();
+            quaternion2.x = w1 * x2 + x1 * w2 + y1 * z2 - z1 * y2;
+            quaternion2.y = w1 * y2 - x1 * z2 + y1 * w2 + z1 * x2;
+            quaternion2.z = w1 * z2 + x1 * y2 - y1 * x2 + z1 * w2;
+            quaternion2.w = w1 * w2 - x1 * x2 - y1 * y2 - z1 * z2;
         }
 
-        Vec3f Vec3f = new Vec3f(-1.0F, -1.0F, 0.0F);
+        Vector3f Vec3f = new Vector3f(-1.0F, -1.0F, 0.0F);
         Vec3f.rotate(quaternion2);
-        Vec3f[] Vec3fs = new Vec3f[]{new Vec3f(-1.0F, -1.0F, 0.0F), new Vec3f(-1.0F, 1.0F, 0.0F), new Vec3f(1.0F, 1.0F, 0.0F), new Vec3f(1.0F, -1.0F, 0.0F)};
+        Vector3f[] Vec3fs = new Vector3f[]{new Vector3f(-1.0F, -1.0F, 0.0F), new Vector3f(-1.0F, 1.0F, 0.0F), new Vector3f(1.0F, 1.0F, 0.0F), new Vector3f(1.0F, -1.0F, 0.0F)};
         float j = this.getSize(tickDelta);
 
         for (int k = 0; k < 4; ++k) {
-            Vec3f Vec3f2 = Vec3fs[k];
+            Vector3f Vec3f2 = Vec3fs[k];
             Vec3f2.rotate(quaternion2);
-            Vec3f2.scale(j);
+            Vec3f2.mul(j);
             Vec3f2.add(f, g, h);
         }
 
@@ -74,10 +93,10 @@ public class AutumnLeavesParticle extends SpriteBillboardParticle {
         float maxV = this.getMaxV();
         int l = 15728880;
 
-        vertexConsumer.vertex(Vec3fs[0].getX(), Vec3fs[0].getY(), Vec3fs[0].getZ()).texture(maxU, maxV).color(red, green, blue, alpha).light(l).next();
-        vertexConsumer.vertex(Vec3fs[1].getX(), Vec3fs[1].getY(), Vec3fs[1].getZ()).texture(maxU, minV).color(red, green, blue, alpha).light(l).next();
-        vertexConsumer.vertex(Vec3fs[2].getX(), Vec3fs[2].getY(), Vec3fs[2].getZ()).texture(minU, minV).color(red, green, blue, alpha).light(l).next();
-        vertexConsumer.vertex(Vec3fs[3].getX(), Vec3fs[3].getY(), Vec3fs[3].getZ()).texture(minU, maxV).color(red, green, blue, alpha).light(l).next();
+        vertexConsumer.vertex(Vec3fs[0].x(), Vec3fs[0].y(), Vec3fs[0].z()).texture(maxU, maxV).color(red, green, blue, alpha).light(l).next();
+        vertexConsumer.vertex(Vec3fs[1].x(), Vec3fs[1].y(), Vec3fs[1].z()).texture(maxU, minV).color(red, green, blue, alpha).light(l).next();
+        vertexConsumer.vertex(Vec3fs[2].x(), Vec3fs[2].y(), Vec3fs[2].z()).texture(minU, minV).color(red, green, blue, alpha).light(l).next();
+        vertexConsumer.vertex(Vec3fs[3].x(), Vec3fs[3].y(), Vec3fs[3].z()).texture(minU, maxV).color(red, green, blue, alpha).light(l).next();
     }
 
     public ParticleTextureSheet getType() {
@@ -97,7 +116,7 @@ public class AutumnLeavesParticle extends SpriteBillboardParticle {
 
         float fraction = this.age / (float) this.maxAge;
         this.x = MathHelper.cos(this.age / 15.0F + 1.0471973f * (variant + 0.5f)) * fraction + beginX;
-        this.z = MathHelper.sin(this.age / 15.0F + 1.0471973f * (variant + 0.5f)) * fraction + beginZ;
+        this.z = sin(this.age / 15.0F + 1.0471973f * (variant + 0.5f)) * fraction + beginZ;
         this.y = this.age / 34.0F + beginY + 0.05F;
 
         if (this.age >= this.maxAge - 10) {

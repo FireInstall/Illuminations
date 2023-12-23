@@ -18,17 +18,20 @@ import net.minecraft.entity.Entity;
 import net.minecraft.particle.BlockStateParticleEffect;
 import net.minecraft.particle.DefaultParticleType;
 import net.minecraft.particle.ParticleTypes;
+import net.minecraft.registry.tag.BlockTags;
 import net.minecraft.sound.SoundCategory;
 import net.minecraft.sound.SoundEvents;
-import net.minecraft.tag.BlockTags;
 import net.minecraft.util.Identifier;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.math.MathHelper;
 import net.minecraft.util.math.Vec3d;
-import net.minecraft.util.math.Vec3f;
 import org.jetbrains.annotations.Nullable;
+import org.joml.Quaternionf;
 
 import java.util.List;
+
+import static java.lang.Math.cos;
+import static java.lang.Math.sin;
 
 public class WillOWispParticle extends Particle {
     public final Identifier texture;
@@ -80,8 +83,10 @@ public class WillOWispParticle extends Particle {
 
         MatrixStack matrixStack = new MatrixStack();
         matrixStack.translate(f, g, h);
-        matrixStack.multiply(Vec3f.POSITIVE_Y.getDegreesQuaternion(MathHelper.lerp(g, this.prevYaw, this.yaw) - 180));
-        matrixStack.multiply(Vec3f.POSITIVE_X.getDegreesQuaternion(MathHelper.lerp(g, this.prevPitch, this.pitch)));
+        float rotationAngle = (MathHelper.lerp(g, this.prevYaw, this.yaw) - 180) * 0.017453292F;
+        matrixStack.multiply(new Quaternionf(0, sin(rotationAngle / 2.0F), 0, cos(rotationAngle / 2.0F)));
+        rotationAngle = MathHelper.lerp(g, this.prevPitch, this.pitch) * 0.017453292F;
+        matrixStack.multiply(new Quaternionf(sin(rotationAngle / 2.0F), 0, 0, cos(rotationAngle / 2.0F)));
         matrixStack.scale(0.5F, -0.5F, 0.5F);
         matrixStack.translate(0, -1, 0);
         VertexConsumerProvider.Immediate immediate = MinecraftClient.getInstance().getBufferBuilders().getEntityVertexConsumers();
@@ -107,8 +112,8 @@ public class WillOWispParticle extends Particle {
                 this.world.addParticle(new WispTrailParticleEffect(this.red, this.green, this.blue, this.redEvolution, this.greenEvolution, this.blueEvolution), this.x + random.nextGaussian() / 15, this.y + random.nextGaussian() / 15, this.z + random.nextGaussian() / 15, 0, 0, 0);
                 this.world.addParticle(new BlockStateParticleEffect(ParticleTypes.BLOCK, Blocks.SOUL_SAND.getDefaultState()), this.x + random.nextGaussian() / 10, this.y + random.nextGaussian() / 10, this.z + random.nextGaussian() / 10, random.nextGaussian() / 20, random.nextGaussian() / 20, random.nextGaussian() / 20);
             }
-            this.world.playSound(new BlockPos(this.x, this.y, this.z), SoundEvents.PARTICLE_SOUL_ESCAPE, SoundCategory.AMBIENT, 1.0f, 1.5f, true);
-            this.world.playSound(new BlockPos(this.x, this.y, this.z), SoundEvents.BLOCK_SOUL_SAND_BREAK, SoundCategory.AMBIENT, 1.0f, 1.0f, true);
+            this.world.playSound(this.x, this.y, this.z, SoundEvents.PARTICLE_SOUL_ESCAPE, SoundCategory.AMBIENT, 1.0f, 1.5f, true);
+            this.world.playSound(this.x, this.y, this.z, SoundEvents.BLOCK_SOUL_SAND_BREAK, SoundCategory.AMBIENT, 1.0f, 1.0f, true);
             this.markDead();
         }
 
@@ -134,22 +139,22 @@ public class WillOWispParticle extends Particle {
         this.pitch = (float) (MathHelper.atan2(vec3d.y, f) * 57.2957763671875D);
 
         for (int i = 0; i < 10 * this.speedModifier; i++) {
-            if (this.world.getBlockState(new BlockPos(this.x, this.y, this.z)).isIn(BlockTags.SOUL_FIRE_BASE_BLOCKS)) {
+            if (this.world.getBlockState(new BlockPos((int) this.x, (int) this.y, (int) this.z)).isIn(BlockTags.SOUL_FIRE_BASE_BLOCKS)) {
                 this.world.addParticle(ParticleTypes.SOUL, this.x + random.nextGaussian() / 10, this.y + random.nextGaussian() / 10, this.z + random.nextGaussian() / 10, random.nextGaussian() / 20, random.nextGaussian() / 20, random.nextGaussian() / 20);
             } else {
                 this.world.addParticle(new WispTrailParticleEffect(this.red, this.green, this.blue, this.redEvolution, this.greenEvolution, this.blueEvolution), this.x + random.nextGaussian() / 15, this.y + random.nextGaussian() / 15, this.z + random.nextGaussian() / 15, 0, 0, 0);
             }
         }
 
-        if (!new BlockPos(x, y, z).equals(this.getTargetPosition())) {
+        if (!new BlockPos((int) x, (int) y, (int) z).equals(this.getTargetPosition())) {
             this.move(velocityX, velocityY, velocityZ);
         }
 
         if (random.nextInt(20) == 0) {
-            this.world.playSound(new BlockPos(this.x, this.y, this.z), SoundEvents.PARTICLE_SOUL_ESCAPE, SoundCategory.AMBIENT, 1.0f, 1.5f, true);
+            this.world.playSound(this.x, this.y, this.z, SoundEvents.PARTICLE_SOUL_ESCAPE, SoundCategory.AMBIENT, 1.0f, 1.5f, true);
         }
 
-        BlockPos pos = new BlockPos(this.x, this.y, this.z);
+        BlockPos pos = new BlockPos((int) this.x, (int) this.y, (int) this.z);
         if (!this.world.getBlockState(pos).isAir()) {
             if (timeInSolid > -1) {
                 timeInSolid += 1;
@@ -167,7 +172,7 @@ public class WillOWispParticle extends Particle {
     public void move(double dx, double dy, double dz) {
         double d = dx;
         double e = dy;
-        if (this.collidesWithWorld && !this.world.getBlockState(new BlockPos(this.x + dx, this.y + dy, this.z + dz)).isIn(BlockTags.SOUL_FIRE_BASE_BLOCKS) && (dx != 0.0D || dy != 0.0D || dz != 0.0D)) {
+        if (this.collidesWithWorld && !this.world.getBlockState(new BlockPos((int) (this.x + dx), (int) (this.y + dy), (int) (this.z + dz))).isIn(BlockTags.SOUL_FIRE_BASE_BLOCKS) && (dx != 0.0D || dy != 0.0D || dz != 0.0D)) {
             Vec3d vec3d = Entity.adjustMovementForCollisions(null, new Vec3d(dx, dy, dz), this.getBoundingBox(), this.world, List.of());
 
             dx = vec3d.x;
@@ -180,7 +185,7 @@ public class WillOWispParticle extends Particle {
             this.repositionFromBoundingBox();
         }
 
-        this.onGround = dy != dy && e < 0.0D && !this.world.getBlockState(new BlockPos(this.x, this.y, this.z)).isIn(BlockTags.SOUL_FIRE_BASE_BLOCKS);
+        this.onGround = dy != dy && e < 0.0D && !this.world.getBlockState(new BlockPos((int) this.x, (int) this.y, (int) this.z)).isIn(BlockTags.SOUL_FIRE_BASE_BLOCKS);
         if (d != dx) {
             this.velocityX = 0.0D;
         }
@@ -191,7 +196,7 @@ public class WillOWispParticle extends Particle {
     }
 
     public BlockPos getTargetPosition() {
-        return new BlockPos(this.xTarget, this.yTarget + 0.5, this.zTarget);
+        return new BlockPos((int) this.xTarget, (int) (this.yTarget + 0.5), (int) this.zTarget);
     }
 
     private void selectBlockTarget() {
@@ -200,7 +205,7 @@ public class WillOWispParticle extends Particle {
         this.yTarget = this.y + random.nextGaussian() * 10;
         this.zTarget = this.z + random.nextGaussian() * 10;
 
-        BlockPos targetPos = new BlockPos(this.xTarget, this.yTarget, this.zTarget);
+        BlockPos targetPos = new BlockPos((int) this.xTarget, (int) this.yTarget, (int) this.zTarget);
         if (this.world.getBlockState(targetPos).isFullCube(world, targetPos) && !this.world.getBlockState(targetPos).isIn(BlockTags.SOUL_FIRE_BASE_BLOCKS)) {
             targetChangeCooldown = 0;
             return;

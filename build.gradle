@@ -48,12 +48,14 @@ repositories {
     maven { url "https://maven.shedaniel.me/" }
 
     // satin
+
     maven {
         name = 'Ladysnake Mods'
-        url = 'https://ladysnake.jfrog.io/artifactory/mods'
+        url = 'https://maven.ladysnake.org/releases'
         content {
             includeGroup 'io.github.ladysnake'
-            includeGroupByRegex 'io\\.github\\.onyxstudios.*'
+            includeGroup 'org.ladysnake'
+            includeGroupByRegex 'dev\\.onyxstudios.*'
         }
     }
 
@@ -83,7 +85,7 @@ dependencies {
 //    modImplementation "grondag:canvas-mc117-1.17:1.0.2033"
 
 	// satin
-	modCompileOnly "io.github.ladysnake:satin:${satin_version}"
+	modCompileOnly "org.ladysnake:satin:${satin_version}"
 }
 
 processResources {

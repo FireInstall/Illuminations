@@ -24,10 +24,13 @@ import net.minecraft.util.Identifier;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.math.MathHelper;
 import net.minecraft.util.math.Vec3d;
-import net.minecraft.util.math.Vec3f;
 import org.jetbrains.annotations.Nullable;
+import org.joml.Quaternionf;
 
 import java.util.List;
+
+import static org.joml.Math.cos;
+import static org.joml.Math.sin;
 
 public class PoltergeistParticle extends WillOWispParticle {
     protected PoltergeistParticle(ClientWorld world, double x, double y, double z, Identifier texture, float red, float green, float blue, float redEvolution, float greenEvolution, float blueEvolution) {
@@ -48,8 +51,12 @@ public class PoltergeistParticle extends WillOWispParticle {
 
         MatrixStack matrixStack = new MatrixStack();
         matrixStack.translate(f, g, h);
-        matrixStack.multiply(Vec3f.POSITIVE_Y.getDegreesQuaternion(MathHelper.lerp(g, this.prevYaw, this.yaw) - 180));
-        matrixStack.multiply(Vec3f.POSITIVE_X.getDegreesQuaternion(MathHelper.lerp(g, this.prevPitch, this.pitch)));
+
+
+        float rotationAngle = (MathHelper.lerp(g, this.prevYaw, this.yaw) - 180) * 0.017453292F;
+        matrixStack.multiply(new Quaternionf(0, sin(rotationAngle / 2.0F), 0, cos(rotationAngle / 2.0F)));
+        rotationAngle = MathHelper.lerp(g, this.prevPitch, this.pitch) * 0.017453292F;
+        matrixStack.multiply(new Quaternionf(sin(rotationAngle / 2.0F), 0, 0, cos(rotationAngle / 2.0F)));
         matrixStack.scale(0.5F, -0.5F, 0.5F);
         matrixStack.translate(0, -1, 0);
         VertexConsumerProvider.Immediate immediate = MinecraftClient.getInstance().getBufferBuilders().getEntityVertexConsumers();
@@ -81,8 +88,8 @@ public class PoltergeistParticle extends WillOWispParticle {
                 this.world.addParticle(new WispTrailParticleEffect(this.red, this.green, this.blue, this.redEvolution, this.greenEvolution, this.blueEvolution), this.x + random.nextGaussian() / 15, this.y + random.nextGaussian() / 15, this.z + random.nextGaussian() / 15, 0, 0, 0);
                 this.world.addParticle(new BlockStateParticleEffect(ParticleTypes.BLOCK, Blocks.SKELETON_SKULL.getDefaultState()), this.x + random.nextGaussian() / 10, this.y + random.nextGaussian() / 10, this.z + random.nextGaussian() / 10, random.nextGaussian() / 20, random.nextGaussian() / 20, random.nextGaussian() / 20);
             }
-            this.world.playSound(new BlockPos(this.x, this.y, this.z), SoundEvents.ENTITY_VEX_DEATH, SoundCategory.AMBIENT, 1.0f, 0.8f, true);
-            this.world.playSound(new BlockPos(this.x, this.y, this.z), SoundEvents.ENTITY_SKELETON_DEATH, SoundCategory.AMBIENT, 1.0f, 1.0f, true);
+            this.world.playSound(this.x, this.y, this.z, SoundEvents.ENTITY_VEX_DEATH, SoundCategory.AMBIENT, 1.0f, 0.8f, true);
+            this.world.playSound(this.x, this.y, this.z, SoundEvents.ENTITY_SKELETON_DEATH, SoundCategory.AMBIENT, 1.0f, 1.0f, true);
             this.markDead();
         }
 
@@ -109,15 +116,15 @@ public class PoltergeistParticle extends WillOWispParticle {
 
         this.world.addParticle(new WispTrailParticleEffect(this.red, this.green, this.blue, this.redEvolution, this.greenEvolution, this.blueEvolution), this.x + random.nextGaussian() / 15, this.y + random.nextGaussian() / 15, this.z + random.nextGaussian() / 15, 0, 0, 0);
 
-        if (!new BlockPos(x, y, z).equals(this.getTargetPosition())) {
+        if (!new BlockPos((int) x, (int) y, (int) z).equals(this.getTargetPosition())) {
             this.move(velocityX, velocityY, velocityZ);
         }
 
         if (random.nextInt(20) == 0) {
-            this.world.playSound(new BlockPos(this.x, this.y, this.z), SoundEvents.ENTITY_VEX_AMBIENT, SoundCategory.AMBIENT, 1.0f, 0.8f, true);
+            this.world.playSound(this.x, this.y, this.z, SoundEvents.ENTITY_VEX_AMBIENT, SoundCategory.AMBIENT, 1.0f, 0.8f, true);
         }
 
-        BlockPos pos = new BlockPos(this.x, this.y, this.z);
+        BlockPos pos = new BlockPos((int) this.x, (int) this.y, (int) this.z);
         if (!this.world.getBlockState(pos).isAir()) {
             if (timeInSolid > -1) {
                 timeInSolid += 1;
@@ -159,7 +166,7 @@ public class PoltergeistParticle extends WillOWispParticle {
     }
 
     public BlockPos getTargetPosition() {
-        return new BlockPos(this.xTarget, this.yTarget + 0.5, this.zTarget);
+        return new BlockPos((int) this.xTarget, (int) (this.yTarget + 0.5), (int) this.zTarget);
     }
 
     private void selectBlockTarget() {
@@ -168,7 +175,7 @@ public class PoltergeistParticle extends WillOWispParticle {
         this.yTarget = this.y + random.nextGaussian() * 10;
         this.zTarget = this.z + random.nextGaussian() * 10;
 
-        BlockPos targetPos = new BlockPos(this.xTarget, this.yTarget, this.zTarget);
+        BlockPos targetPos = new BlockPos((int) this.xTarget, (int) this.yTarget, (int) this.zTarget);
         if (this.world.getBlockState(targetPos).isFullCube(world, targetPos)) {
             targetChangeCooldown = 0;
             return;

@@ -11,7 +11,6 @@ import ladysnake.illuminations.client.data.AuraData;
 import ladysnake.illuminations.client.data.IlluminationData;
 import ladysnake.illuminations.client.data.OverheadData;
 import ladysnake.illuminations.client.data.PlayerCosmeticData;
-import ladysnake.illuminations.client.enums.BiomeCategory;
 import ladysnake.illuminations.client.enums.HalloweenFeatures;
 import ladysnake.illuminations.client.particle.*;
 import ladysnake.illuminations.client.particle.aura.*;
@@ -25,8 +24,8 @@ import net.fabricmc.api.ClientModInitializer;
 import net.fabricmc.api.EnvType;
 import net.fabricmc.api.Environment;
 import net.fabricmc.fabric.api.client.particle.v1.ParticleFactoryRegistry;
-import net.fabricmc.fabric.api.client.rendereregistry.v1.EntityModelLayerRegistry;
-import net.fabricmc.fabric.api.client.rendereregistry.v1.LivingEntityFeatureRendererRegistrationCallback;
+import net.fabricmc.fabric.api.client.rendering.v1.EntityModelLayerRegistry;
+import net.fabricmc.fabric.api.client.rendering.v1.LivingEntityFeatureRendererRegistrationCallback;
 import net.fabricmc.fabric.api.particle.v1.FabricParticleTypes;
 import net.fabricmc.fabric.api.resource.ResourceManagerHelper;
 import net.fabricmc.fabric.api.resource.ResourcePackActivationType;
@@ -42,11 +41,12 @@ import net.minecraft.entity.EntityType;
 import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.particle.DefaultParticleType;
 import net.minecraft.particle.ParticleType;
-import net.minecraft.tag.BlockTags;
-import net.minecraft.tag.FluidTags;
+import net.minecraft.registry.Registries;
+import net.minecraft.registry.Registry;
+import net.minecraft.registry.tag.BlockTags;
+import net.minecraft.registry.tag.FluidTags;
 import net.minecraft.util.Identifier;
 import net.minecraft.util.math.BlockPos;
-import net.minecraft.util.registry.Registry;
 import net.minecraft.world.World;
 import org.apache.logging.log4j.Level;
 import org.apache.logging.log4j.LogManager;
@@ -82,11 +82,11 @@ public class Illuminations implements ClientModInitializer {
                 ? (block == Blocks.AIR || block == Blocks.VOID_AIR)
                 : block == Blocks.AIR
                 && (Config.doesFireflySpawnAlways() || Illuminations.isNightTime(world))
-                && (Config.doesFireflySpawnUnderground() || world.isSkyVisible(blockPos));
+                && (Config.doesFireflySpawnUnderground() || world.getBlockState(blockPos).isOf(Blocks.AIR));
     };
     public static final BiPredicate<World, BlockPos> GLOWWORM_LOCATION_PREDICATE = (world, blockPos) -> world.getBlockState(blockPos).getBlock() == Blocks.CAVE_AIR;
     public static final BiPredicate<World, BlockPos> PLANKTON_LOCATION_PREDICATE = (world, blockPos) -> world.getBlockState(blockPos).getFluidState().isIn(FluidTags.WATER) && world.getLightLevel(blockPos) < 2;
-    public static final BiPredicate<World, BlockPos> EYES_LOCATION_PREDICATE = (world, blockPos) -> ((Config.getHalloweenFeatures() == HalloweenFeatures.ENABLE && LocalDate.now().getMonth() == Month.OCTOBER) || Config.getHalloweenFeatures() == HalloweenFeatures.ALWAYS) && (world.getBlockState(blockPos).getBlock() == Blocks.AIR || world.getBlockState(blockPos).getBlock() == Blocks.CAVE_AIR) && world.getLightLevel(blockPos) <= 0 && world.getClosestPlayer(blockPos.getX(), blockPos.getY(), blockPos.getZ(), EYES_VANISHING_DISTANCE, false) == null && world.getRegistryKey().equals(World.OVERWORLD);
+    public static final BiPredicate<World, BlockPos> EYES_LOCATION_PREDICATE = (world, blockPos) -> ((Config.getHalloweenFeatures() == HalloweenFeatures.ENABLE && LocalDate.now().getMonth() == Month.OCTOBER) || Config.getHalloweenFeatures() == HalloweenFeatures.ALWAYS) && (world.getBlockState(blockPos).getBlock() == Blocks.AIR || world.getBlockState(blockPos).getBlock() == Blocks.CAVE_AIR) && world.getLightLevel(blockPos) <= 0 && world.getClosestPlayer(blockPos.getX(), blockPos.getY(), blockPos.getZ(), EYES_VANISHING_DISTANCE, false) == null;
     public static final BiPredicate<World, BlockPos> WISP_LOCATION_PREDICATE = (world, blockPos) -> world.getBlockState(blockPos).isIn(BlockTags.SOUL_FIRE_BASE_BLOCKS);
     // register overhead models
     public static final EntityModelLayer CROWN = new EntityModelLayer(new Identifier(MODID, "crown"), "main");
@@ -146,7 +146,7 @@ public class Illuminations implements ClientModInitializer {
     public static DefaultParticleType SOOTHING_LANTERN_PET;
     public static DefaultParticleType GENDERFLUID_PRIDE_PET;
     // spawn biome categories and biomes
-    public static ImmutableMap<BiomeCategory, ImmutableSet<IlluminationData>> ILLUMINATIONS_BIOME_CATEGORIES;
+    public static ImmutableMap<Identifier, ImmutableSet<IlluminationData>> ILLUMINATIONS_BIOME_CATEGORIES;
     public static ImmutableMap<Identifier, ImmutableSet<IlluminationData>> ILLUMINATIONS_BIOMES;
     private static Map<UUID, PlayerCosmeticData> PLAYER_COSMETICS = Collections.emptyMap();
 
@@ -159,35 +159,35 @@ public class Illuminations implements ClientModInitializer {
     }
 
     public static void loadPlayerCosmetics() {
-            // get illuminations player cosmetics
-            CompletableFuture.supplyAsync(() -> {
-                try (Reader reader = new InputStreamReader(new URL(COSMETICS_URL).openStream())) {
-                    if (Config.isDebugMode())
-                        logger.log(Level.INFO, "Retrieving Illuminations cosmetics from the dashboard...");
-                    return COSMETICS_GSON.<Map<UUID, PlayerCosmeticData>>fromJson(reader, COSMETIC_SELECT_TYPE);
-                } catch (MalformedURLException e) {
-                    if (Config.isDebugMode())
-                        logger.log(Level.ERROR, "Could not get player cosmetics because of malformed URL: " + e.getMessage());
-                } catch (IOException e) {
-                    if (Config.isDebugMode())
-                        logger.log(Level.ERROR, "Could not get player cosmetics because of I/O Error: " + e.getMessage());
-                }
-
-                return null;
-            }).exceptionally(throwable -> {
+        // get illuminations player cosmetics
+        CompletableFuture.supplyAsync(() -> {
+            try (Reader reader = new InputStreamReader(new URL(COSMETICS_URL).openStream())) {
                 if (Config.isDebugMode())
-                    logger.log(Level.ERROR, "Could not get player cosmetics because wtf is happening", throwable);
-                return null;
-            }).thenAcceptAsync(playerData -> {
-                if (playerData != null) {
-                    PLAYER_COSMETICS = playerData;
-                    if (Config.isDebugMode()) logger.log(Level.INFO, "Player cosmetics successfully registered");
-                } else {
-                    PLAYER_COSMETICS = Collections.emptyMap();
-                    if (Config.isDebugMode())
-                        logger.log(Level.WARN, "Player cosmetics could not registered, cosmetics will be ignored");
-                }
-            }, MinecraftClient.getInstance());
+                    logger.log(Level.INFO, "Retrieving Illuminations cosmetics from the dashboard...");
+                return COSMETICS_GSON.<Map<UUID, PlayerCosmeticData>>fromJson(reader, COSMETIC_SELECT_TYPE);
+            } catch (MalformedURLException e) {
+                if (Config.isDebugMode())
+                    logger.log(Level.ERROR, "Could not get player cosmetics because of malformed URL: " + e.getMessage());
+            } catch (IOException e) {
+                if (Config.isDebugMode())
+                    logger.log(Level.ERROR, "Could not get player cosmetics because of I/O Error: " + e.getMessage());
+            }
+
+            return null;
+        }).exceptionally(throwable -> {
+            if (Config.isDebugMode())
+                logger.log(Level.ERROR, "Could not get player cosmetics because wtf is happening", throwable);
+            return null;
+        }).thenAcceptAsync(playerData -> {
+            if (playerData != null) {
+                PLAYER_COSMETICS = playerData;
+                if (Config.isDebugMode()) logger.log(Level.INFO, "Player cosmetics successfully registered");
+            } else {
+                PLAYER_COSMETICS = Collections.emptyMap();
+                if (Config.isDebugMode())
+                    logger.log(Level.WARN, "Player cosmetics could not registered, cosmetics will be ignored");
+            }
+        }, MinecraftClient.getInstance());
     }
 
     public static boolean isNightTime(World world) {
@@ -225,111 +225,111 @@ public class Illuminations implements ClientModInitializer {
         EntityModelLayerRegistry.registerModelLayer(PrideHeartModel.MODEL_LAYER, PrideHeartModel::getTexturedModelData);
 
         // particles
-        FIREFLY = Registry.register(Registry.PARTICLE_TYPE, "illuminations:firefly", FabricParticleTypes.simple(true));
+        FIREFLY = Registry.register(Registries.PARTICLE_TYPE, "illuminations:firefly", FabricParticleTypes.simple(true));
         ParticleFactoryRegistry.getInstance().register(Illuminations.FIREFLY, FireflyParticle.DefaultFactory::new);
-        GLOWWORM = Registry.register(Registry.PARTICLE_TYPE, "illuminations:glowworm", FabricParticleTypes.simple(true));
+        GLOWWORM = Registry.register(Registries.PARTICLE_TYPE, "illuminations:glowworm", FabricParticleTypes.simple(true));
         ParticleFactoryRegistry.getInstance().register(Illuminations.GLOWWORM, GlowwormParticle.DefaultFactory::new);
-        PLANKTON = Registry.register(Registry.PARTICLE_TYPE, "illuminations:plankton", FabricParticleTypes.simple(true));
+        PLANKTON = Registry.register(Registries.PARTICLE_TYPE, "illuminations:plankton", FabricParticleTypes.simple(true));
         ParticleFactoryRegistry.getInstance().register(Illuminations.PLANKTON, PlanktonParticle.DefaultFactory::new);
-        EYES = Registry.register(Registry.PARTICLE_TYPE, "illuminations:eyes", FabricParticleTypes.simple(true));
+        EYES = Registry.register(Registries.PARTICLE_TYPE, "illuminations:eyes", FabricParticleTypes.simple(true));
         ParticleFactoryRegistry.getInstance().register(Illuminations.EYES, EyesParticle.DefaultFactory::new);
-        CHORUS_PETAL = Registry.register(Registry.PARTICLE_TYPE, "illuminations:chorus_petal", FabricParticleTypes.simple(true));
+        CHORUS_PETAL = Registry.register(Registries.PARTICLE_TYPE, "illuminations:chorus_petal", FabricParticleTypes.simple(true));
         ParticleFactoryRegistry.getInstance().register(Illuminations.CHORUS_PETAL, ChorusPetalParticle.DefaultFactory::new);
-        WILL_O_WISP = Registry.register(Registry.PARTICLE_TYPE, "illuminations:will_o_wisp", FabricParticleTypes.simple(true));
+        WILL_O_WISP = Registry.register(Registries.PARTICLE_TYPE, "illuminations:will_o_wisp", FabricParticleTypes.simple(true));
         ParticleFactoryRegistry.getInstance().register(Illuminations.WILL_O_WISP, fabricSpriteProvider -> new WillOWispParticle.DefaultFactory(fabricSpriteProvider, new Identifier(Illuminations.MODID, "textures/entity/will_o_wisp.png"), 1.0f, 1.0f, 1.0f, -0.1f, -0.01f, 0.0f));
-        WISP_TRAIL = Registry.register(Registry.PARTICLE_TYPE, "illuminations:wisp_trail", new ParticleType<WispTrailParticleEffect>(true, WispTrailParticleEffect.PARAMETERS_FACTORY) {
+        WISP_TRAIL = Registry.register(Registries.PARTICLE_TYPE, "illuminations:wisp_trail", new ParticleType<WispTrailParticleEffect>(true, WispTrailParticleEffect.PARAMETERS_FACTORY) {
             @Override
             public Codec<WispTrailParticleEffect> getCodec() {
                 return WispTrailParticleEffect.CODEC;
             }
         });
         ParticleFactoryRegistry.getInstance().register(Illuminations.WISP_TRAIL, WispTrailParticle.Factory::new);
-        PUMPKIN_SPIRIT = Registry.register(Registry.PARTICLE_TYPE, "illuminations:pumpkin_spirit", FabricParticleTypes.simple(true));
+        PUMPKIN_SPIRIT = Registry.register(Registries.PARTICLE_TYPE, "illuminations:pumpkin_spirit", FabricParticleTypes.simple(true));
         ParticleFactoryRegistry.getInstance().register(Illuminations.PUMPKIN_SPIRIT, fabricSpriteProvider -> new PumpkinSpiritParticle.DefaultFactory(fabricSpriteProvider, new Identifier(Illuminations.MODID, "textures/entity/pumpkin_spirit.png"), 1.0f, 0.95f, 0.0f, 0.0f, -0.03f, 0.0f));
-        POLTERGEIST = Registry.register(Registry.PARTICLE_TYPE, "illuminations:poltergeist", FabricParticleTypes.simple(true));
+        POLTERGEIST = Registry.register(Registries.PARTICLE_TYPE, "illuminations:poltergeist", FabricParticleTypes.simple(true));
         ParticleFactoryRegistry.getInstance().register(Illuminations.POLTERGEIST, fabricSpriteProvider -> new PoltergeistParticle.DefaultFactory(fabricSpriteProvider, new Identifier(Illuminations.MODID, "textures/entity/poltergeist.png"), 1.0f, 1.0f, 1.0f, 0.0f, 0.0f, 0.0f));
-        PRISMARINE_CRYSTAL = Registry.register(Registry.PARTICLE_TYPE, "illuminations:prismarine_crystal", FabricParticleTypes.simple(true));
+        PRISMARINE_CRYSTAL = Registry.register(Registries.PARTICLE_TYPE, "illuminations:prismarine_crystal", FabricParticleTypes.simple(true));
         ParticleFactoryRegistry.getInstance().register(Illuminations.PRISMARINE_CRYSTAL, PrismarineCrystalParticle.DefaultFactory::new);
 
 //        EMBER = Registry.register(Registry.PARTICLE_TYPE, "illuminations:ember", FabricParticleTypes.simple(true));
 //        ParticleFactoryRegistry.getInstance().register(Illuminations.EMBER, EmberParticle.DefaultFactory::new);
         // aura particles
-        TWILIGHT_AURA = Registry.register(Registry.PARTICLE_TYPE, "illuminations:twilight_aura", FabricParticleTypes.simple(true));
+        TWILIGHT_AURA = Registry.register(Registries.PARTICLE_TYPE, "illuminations:twilight_aura", FabricParticleTypes.simple(true));
         ParticleFactoryRegistry.getInstance().register(Illuminations.TWILIGHT_AURA, TwilightFireflyParticle.DefaultFactory::new);
-        GHOSTLY_AURA = Registry.register(Registry.PARTICLE_TYPE, "illuminations:ghostly_aura", FabricParticleTypes.simple(true));
+        GHOSTLY_AURA = Registry.register(Registries.PARTICLE_TYPE, "illuminations:ghostly_aura", FabricParticleTypes.simple(true));
         ParticleFactoryRegistry.getInstance().register(Illuminations.GHOSTLY_AURA, GhostlyAuraParticle.DefaultFactory::new);
-        CHORUS_AURA = Registry.register(Registry.PARTICLE_TYPE, "illuminations:chorus_aura", FabricParticleTypes.simple(true));
+        CHORUS_AURA = Registry.register(Registries.PARTICLE_TYPE, "illuminations:chorus_aura", FabricParticleTypes.simple(true));
         ParticleFactoryRegistry.getInstance().register(Illuminations.CHORUS_AURA, ChorusAuraParticle.DefaultFactory::new);
-        AUTUMN_LEAVES_AURA = Registry.register(Registry.PARTICLE_TYPE, "illuminations:autumn_leaves", FabricParticleTypes.simple(true));
+        AUTUMN_LEAVES_AURA = Registry.register(Registries.PARTICLE_TYPE, "illuminations:autumn_leaves", FabricParticleTypes.simple(true));
         ParticleFactoryRegistry.getInstance().register(Illuminations.AUTUMN_LEAVES_AURA, AutumnLeavesParticle.DefaultFactory::new);
-        SCULK_TENDRIL_AURA = Registry.register(Registry.PARTICLE_TYPE, "illuminations:sculk_tendril", FabricParticleTypes.simple(true));
+        SCULK_TENDRIL_AURA = Registry.register(Registries.PARTICLE_TYPE, "illuminations:sculk_tendril", FabricParticleTypes.simple(true));
         ParticleFactoryRegistry.getInstance().register(Illuminations.SCULK_TENDRIL_AURA, SculkTendrilParticle.DefaultFactory::new);
-        SHADOWBRINGER_AURA = Registry.register(Registry.PARTICLE_TYPE, "illuminations:shadowbringer_aura", FabricParticleTypes.simple(true));
+        SHADOWBRINGER_AURA = Registry.register(Registries.PARTICLE_TYPE, "illuminations:shadowbringer_aura", FabricParticleTypes.simple(true));
         ParticleFactoryRegistry.getInstance().register(Illuminations.SHADOWBRINGER_AURA, ShadowbringerParticle.DefaultFactory::new);
-        GOLDENROD_AURA = Registry.register(Registry.PARTICLE_TYPE, "illuminations:goldenrod_aura", FabricParticleTypes.simple(true));
+        GOLDENROD_AURA = Registry.register(Registries.PARTICLE_TYPE, "illuminations:goldenrod_aura", FabricParticleTypes.simple(true));
         ParticleFactoryRegistry.getInstance().register(Illuminations.GOLDENROD_AURA, GoldenrodAuraParticle.DefaultFactory::new);
-        CONFETTI_AURA = Registry.register(Registry.PARTICLE_TYPE, "illuminations:confetti", FabricParticleTypes.simple(true));
+        CONFETTI_AURA = Registry.register(Registries.PARTICLE_TYPE, "illuminations:confetti", FabricParticleTypes.simple(true));
         ParticleFactoryRegistry.getInstance().register(Illuminations.CONFETTI_AURA, ConfettiParticle.DefaultFactory::new);
-        PRISMATIC_CONFETTI_AURA = Registry.register(Registry.PARTICLE_TYPE, "illuminations:prismatic_confetti", FabricParticleTypes.simple(true));
+        PRISMATIC_CONFETTI_AURA = Registry.register(Registries.PARTICLE_TYPE, "illuminations:prismatic_confetti", FabricParticleTypes.simple(true));
         ParticleFactoryRegistry.getInstance().register(Illuminations.PRISMATIC_CONFETTI_AURA, PrismaticConfettiParticle.DefaultFactory::new);
-        PRISMARINE_AURA = Registry.register(Registry.PARTICLE_TYPE, "illuminations:prismarine_aura", FabricParticleTypes.simple(true));
+        PRISMARINE_AURA = Registry.register(Registries.PARTICLE_TYPE, "illuminations:prismarine_aura", FabricParticleTypes.simple(true));
         ParticleFactoryRegistry.getInstance().register(Illuminations.PRISMARINE_AURA, PrismarineAuraParticle.DefaultFactory::new);
 
         /*
                 PRIDE PETS
          */
-        PRIDE_PET = Registry.register(Registry.PARTICLE_TYPE, "illuminations:pride_pet", FabricParticleTypes.simple(true));
+        PRIDE_PET = Registry.register(Registries.PARTICLE_TYPE, "illuminations:pride_pet", FabricParticleTypes.simple(true));
         ParticleFactoryRegistry.getInstance().register(Illuminations.PRIDE_PET, fabricSpriteProvider -> new PrideHeartParticle.DefaultFactory(fabricSpriteProvider, new Identifier(Illuminations.MODID, "textures/entity/pride_heart.png"), 1.0f, 1.0f, 1.0f));
-        GAY_PRIDE_PET = Registry.register(Registry.PARTICLE_TYPE, "illuminations:gay_pride_pet", FabricParticleTypes.simple(true));
+        GAY_PRIDE_PET = Registry.register(Registries.PARTICLE_TYPE, "illuminations:gay_pride_pet", FabricParticleTypes.simple(true));
         ParticleFactoryRegistry.getInstance().register(Illuminations.GAY_PRIDE_PET, fabricSpriteProvider -> new PrideHeartParticle.DefaultFactory(fabricSpriteProvider, new Identifier(Illuminations.MODID, "textures/entity/gay_pride_heart.png"), 1.0f, 1.0f, 1.0f));
-        TRANS_PRIDE_PET = Registry.register(Registry.PARTICLE_TYPE, "illuminations:trans_pride_pet", FabricParticleTypes.simple(true));
+        TRANS_PRIDE_PET = Registry.register(Registries.PARTICLE_TYPE, "illuminations:trans_pride_pet", FabricParticleTypes.simple(true));
         ParticleFactoryRegistry.getInstance().register(Illuminations.TRANS_PRIDE_PET, fabricSpriteProvider -> new PrideHeartParticle.DefaultFactory(fabricSpriteProvider, new Identifier(Illuminations.MODID, "textures/entity/trans_pride_heart.png"), 1.0f, 1.0f, 1.0f));
-        LESBIAN_PRIDE_PET = Registry.register(Registry.PARTICLE_TYPE, "illuminations:lesbian_pride_pet", FabricParticleTypes.simple(true));
+        LESBIAN_PRIDE_PET = Registry.register(Registries.PARTICLE_TYPE, "illuminations:lesbian_pride_pet", FabricParticleTypes.simple(true));
         ParticleFactoryRegistry.getInstance().register(Illuminations.LESBIAN_PRIDE_PET, fabricSpriteProvider -> new PrideHeartParticle.DefaultFactory(fabricSpriteProvider, new Identifier(Illuminations.MODID, "textures/entity/lesbian_pride_heart.png"), 1.0f, 1.0f, 1.0f));
-        BI_PRIDE_PET = Registry.register(Registry.PARTICLE_TYPE, "illuminations:bi_pride_pet", FabricParticleTypes.simple(true));
+        BI_PRIDE_PET = Registry.register(Registries.PARTICLE_TYPE, "illuminations:bi_pride_pet", FabricParticleTypes.simple(true));
         ParticleFactoryRegistry.getInstance().register(Illuminations.BI_PRIDE_PET, fabricSpriteProvider -> new PrideHeartParticle.DefaultFactory(fabricSpriteProvider, new Identifier(Illuminations.MODID, "textures/entity/bi_pride_heart.png"), 1.0f, 1.0f, 1.0f));
-        ACE_PRIDE_PET = Registry.register(Registry.PARTICLE_TYPE, "illuminations:ace_pride_pet", FabricParticleTypes.simple(true));
+        ACE_PRIDE_PET = Registry.register(Registries.PARTICLE_TYPE, "illuminations:ace_pride_pet", FabricParticleTypes.simple(true));
         ParticleFactoryRegistry.getInstance().register(Illuminations.ACE_PRIDE_PET, fabricSpriteProvider -> new PrideHeartParticle.DefaultFactory(fabricSpriteProvider, new Identifier(Illuminations.MODID, "textures/entity/ace_pride_heart.png"), 1.0f, 1.0f, 1.0f));
-        NB_PRIDE_PET = Registry.register(Registry.PARTICLE_TYPE, "illuminations:nb_pride_pet", FabricParticleTypes.simple(true));
+        NB_PRIDE_PET = Registry.register(Registries.PARTICLE_TYPE, "illuminations:nb_pride_pet", FabricParticleTypes.simple(true));
         ParticleFactoryRegistry.getInstance().register(Illuminations.NB_PRIDE_PET, fabricSpriteProvider -> new PrideHeartParticle.DefaultFactory(fabricSpriteProvider, new Identifier(Illuminations.MODID, "textures/entity/nb_pride_heart.png"), 1.0f, 1.0f, 1.0f));
-        INTERSEX_PRIDE_PET = Registry.register(Registry.PARTICLE_TYPE, "illuminations:intersex_pride_pet", FabricParticleTypes.simple(true));
+        INTERSEX_PRIDE_PET = Registry.register(Registries.PARTICLE_TYPE, "illuminations:intersex_pride_pet", FabricParticleTypes.simple(true));
         ParticleFactoryRegistry.getInstance().register(Illuminations.INTERSEX_PRIDE_PET, fabricSpriteProvider -> new PrideHeartParticle.DefaultFactory(fabricSpriteProvider, new Identifier(Illuminations.MODID, "textures/entity/intersex_pride_heart.png"), 1.0f, 1.0f, 1.0f));
-        ARO_PRIDE_PET = Registry.register(Registry.PARTICLE_TYPE, "illuminations:aro_pride_pet", FabricParticleTypes.simple(true));
+        ARO_PRIDE_PET = Registry.register(Registries.PARTICLE_TYPE, "illuminations:aro_pride_pet", FabricParticleTypes.simple(true));
         ParticleFactoryRegistry.getInstance().register(Illuminations.ARO_PRIDE_PET, fabricSpriteProvider -> new PrideHeartParticle.DefaultFactory(fabricSpriteProvider, new Identifier(Illuminations.MODID, "textures/entity/aro_pride_heart.png"), 1.0f, 1.0f, 1.0f));
-        PAN_PRIDE_PET = Registry.register(Registry.PARTICLE_TYPE, "illuminations:pan_pride_pet", FabricParticleTypes.simple(true));
+        PAN_PRIDE_PET = Registry.register(Registries.PARTICLE_TYPE, "illuminations:pan_pride_pet", FabricParticleTypes.simple(true));
         ParticleFactoryRegistry.getInstance().register(Illuminations.PAN_PRIDE_PET, fabricSpriteProvider -> new PrideHeartParticle.DefaultFactory(fabricSpriteProvider, new Identifier(Illuminations.MODID, "textures/entity/pan_pride_heart.png"), 1.0f, 1.0f, 1.0f));
-        AGENDER_PRIDE_PET = Registry.register(Registry.PARTICLE_TYPE, "illuminations:agender_pride_pet", FabricParticleTypes.simple(true));
+        AGENDER_PRIDE_PET = Registry.register(Registries.PARTICLE_TYPE, "illuminations:agender_pride_pet", FabricParticleTypes.simple(true));
         ParticleFactoryRegistry.getInstance().register(Illuminations.AGENDER_PRIDE_PET, fabricSpriteProvider -> new PrideHeartParticle.DefaultFactory(fabricSpriteProvider, new Identifier(Illuminations.MODID, "textures/entity/agender_pride_heart.png"), 1.0f, 1.0f, 1.0f));
-        GENDERFLUID_PRIDE_PET = Registry.register(Registry.PARTICLE_TYPE, "illuminations:genderfluid_pride_pet", FabricParticleTypes.simple(true));
+        GENDERFLUID_PRIDE_PET = Registry.register(Registries.PARTICLE_TYPE, "illuminations:genderfluid_pride_pet", FabricParticleTypes.simple(true));
         ParticleFactoryRegistry.getInstance().register(Illuminations.GENDERFLUID_PRIDE_PET, fabricSpriteProvider -> new PrideHeartParticle.DefaultFactory(fabricSpriteProvider, new Identifier(Illuminations.MODID, "textures/entity/genderfluid_pride_heart.png"), 1.0f, 1.0f, 1.0f));
         /*
                 WILL O' WISP PETS
          */
-        WILL_O_WISP_PET = Registry.register(Registry.PARTICLE_TYPE, "illuminations:will_o_wisp_pet", FabricParticleTypes.simple(true));
+        WILL_O_WISP_PET = Registry.register(Registries.PARTICLE_TYPE, "illuminations:will_o_wisp_pet", FabricParticleTypes.simple(true));
         ParticleFactoryRegistry.getInstance().register(Illuminations.WILL_O_WISP_PET, fabricSpriteProvider -> new PlayerWispParticle.DefaultFactory(fabricSpriteProvider, new Identifier(Illuminations.MODID, "textures/entity/will_o_wisp.png"), 1.0f, 1.0f, 1.0f, -0.1f, -0.01f, 0.0f));
-        GOLDEN_WILL_PET = Registry.register(Registry.PARTICLE_TYPE, "illuminations:golden_will_pet", FabricParticleTypes.simple(true));
+        GOLDEN_WILL_PET = Registry.register(Registries.PARTICLE_TYPE, "illuminations:golden_will_pet", FabricParticleTypes.simple(true));
         ParticleFactoryRegistry.getInstance().register(Illuminations.GOLDEN_WILL_PET, fabricSpriteProvider -> new PlayerWispParticle.DefaultFactory(fabricSpriteProvider, new Identifier(Illuminations.MODID, "textures/entity/golden_will.png"), 1.0f, 0.3f, 1.0f, -0.05f, -0.01f, 0.0f));
-        FOUNDING_SKULL_PET = Registry.register(Registry.PARTICLE_TYPE, "illuminations:founding_skull_pet", FabricParticleTypes.simple(true));
+        FOUNDING_SKULL_PET = Registry.register(Registries.PARTICLE_TYPE, "illuminations:founding_skull_pet", FabricParticleTypes.simple(true));
         ParticleFactoryRegistry.getInstance().register(Illuminations.FOUNDING_SKULL_PET, fabricSpriteProvider -> new PlayerWispParticle.DefaultFactory(fabricSpriteProvider, new Identifier(Illuminations.MODID, "textures/entity/founding_skull.png"), 1.0f, 0.0f, 0.25f, -0.03f, 0.0f, -0.01f));
-        DISSOLUTION_WISP_PET = Registry.register(Registry.PARTICLE_TYPE, "illuminations:dissolution_wisp_pet", FabricParticleTypes.simple(true));
+        DISSOLUTION_WISP_PET = Registry.register(Registries.PARTICLE_TYPE, "illuminations:dissolution_wisp_pet", FabricParticleTypes.simple(true));
         ParticleFactoryRegistry.getInstance().register(Illuminations.DISSOLUTION_WISP_PET, PetParticle.DefaultFactory::new);
 
         /*
                 SPOOKY PETS
          */
-        JACKO_PET = Registry.register(Registry.PARTICLE_TYPE, "illuminations:jacko_pet", FabricParticleTypes.simple(true));
+        JACKO_PET = Registry.register(Registries.PARTICLE_TYPE, "illuminations:jacko_pet", FabricParticleTypes.simple(true));
         ParticleFactoryRegistry.getInstance().register(Illuminations.JACKO_PET, JackoParticle.DefaultFactory::new);
-        PUMPKIN_SPIRIT_PET = Registry.register(Registry.PARTICLE_TYPE, "illuminations:pumpkin_spirit_pet", FabricParticleTypes.simple(true));
+        PUMPKIN_SPIRIT_PET = Registry.register(Registries.PARTICLE_TYPE, "illuminations:pumpkin_spirit_pet", FabricParticleTypes.simple(true));
         ParticleFactoryRegistry.getInstance().register(Illuminations.PUMPKIN_SPIRIT_PET, fabricSpriteProvider -> new PlayerWispParticle.DefaultFactory(fabricSpriteProvider, new Identifier(Illuminations.MODID, "textures/entity/pumpkin_spirit.png"), 1.0f, 0.95f, 0.0f, 0.0f, -0.03f, 0.0f));
-        POLTERGEIST_PET = Registry.register(Registry.PARTICLE_TYPE, "illuminations:poltergeist_pet", FabricParticleTypes.simple(true));
+        POLTERGEIST_PET = Registry.register(Registries.PARTICLE_TYPE, "illuminations:poltergeist_pet", FabricParticleTypes.simple(true));
         ParticleFactoryRegistry.getInstance().register(Illuminations.POLTERGEIST_PET, fabricSpriteProvider -> new PlayerWispParticle.DefaultFactory(fabricSpriteProvider, new Identifier(Illuminations.MODID, "textures/entity/poltergeist.png"), 1.0f, 1.0f, 1.0f, 0f, 0f, 0f));
-        LANTERN_PET = Registry.register(Registry.PARTICLE_TYPE, "illuminations:lantern_pet", FabricParticleTypes.simple(true));
+        LANTERN_PET = Registry.register(Registries.PARTICLE_TYPE, "illuminations:lantern_pet", FabricParticleTypes.simple(true));
         ParticleFactoryRegistry.getInstance().register(Illuminations.LANTERN_PET, fabricSpriteProvider -> new PlayerLanternParticle.DefaultFactory(fabricSpriteProvider, new Identifier(Illuminations.MODID, "textures/entity/lantern.png"), 1.0f, 1.0f, 1.0f));
-        SOUL_LANTERN_PET = Registry.register(Registry.PARTICLE_TYPE, "illuminations:soul_lantern_pet", FabricParticleTypes.simple(true));
+        SOUL_LANTERN_PET = Registry.register(Registries.PARTICLE_TYPE, "illuminations:soul_lantern_pet", FabricParticleTypes.simple(true));
         ParticleFactoryRegistry.getInstance().register(Illuminations.SOUL_LANTERN_PET, fabricSpriteProvider -> new PlayerLanternParticle.DefaultFactory(fabricSpriteProvider, new Identifier(Illuminations.MODID, "textures/entity/soul_lantern.png"), 1.0f, 1.0f, 1.0f));
-        CRYING_LANTERN_PET = Registry.register(Registry.PARTICLE_TYPE, "illuminations:crying_lantern_pet", FabricParticleTypes.simple(true));
+        CRYING_LANTERN_PET = Registry.register(Registries.PARTICLE_TYPE, "illuminations:crying_lantern_pet", FabricParticleTypes.simple(true));
         ParticleFactoryRegistry.getInstance().register(Illuminations.CRYING_LANTERN_PET, fabricSpriteProvider -> new PlayerLanternParticle.DefaultFactory(fabricSpriteProvider, new Identifier(Illuminations.MODID, "textures/entity/crying_lantern.png"), 1.0f, 1.0f, 1.0f));
-        SOOTHING_LANTERN_PET = Registry.register(Registry.PARTICLE_TYPE, "illuminations:soothing_lantern_pet", FabricParticleTypes.simple(true));
+        SOOTHING_LANTERN_PET = Registry.register(Registries.PARTICLE_TYPE, "illuminations:soothing_lantern_pet", FabricParticleTypes.simple(true));
         ParticleFactoryRegistry.getInstance().register(Illuminations.SOOTHING_LANTERN_PET, fabricSpriteProvider -> new PlayerLanternParticle.DefaultFactory(fabricSpriteProvider, new Identifier(Illuminations.MODID, "textures/entity/soothing_lantern.png"), 1.0f, 1.0f, 1.0f));
 
         /*
@@ -345,7 +345,7 @@ public class Illuminations implements ClientModInitializer {
         /*
                 ADDING FIRFLY, GLOWWORM AND PLANKTON BIOMES SPAWN RATES
          */
-        ImmutableMap.Builder<BiomeCategory, ImmutableSet<IlluminationData>> biomeBuilder = ImmutableMap.builder();
+        ImmutableMap.Builder<Identifier, ImmutableSet<IlluminationData>> biomeBuilder = ImmutableMap.builder();
         Config.getBiomeSettings().forEach((biome, settings) -> {
             ImmutableSet.Builder<IlluminationData> illuminationDataBuilder = ImmutableSet.builder();
 

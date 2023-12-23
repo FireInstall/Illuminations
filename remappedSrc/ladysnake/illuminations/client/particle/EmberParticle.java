@@ -11,7 +11,14 @@ import net.minecraft.client.render.Camera;
 import net.minecraft.client.render.VertexConsumer;
 import net.minecraft.client.world.ClientWorld;
 import net.minecraft.particle.DefaultParticleType;
-import net.minecraft.util.math.*;
+import net.minecraft.util.math.BlockPos;
+import net.minecraft.util.math.MathHelper;
+import net.minecraft.util.math.Vec3d;
+import org.joml.Quaternionf;
+import org.joml.Vector3f;
+
+import static java.lang.Math.cos;
+import static java.lang.Math.sin;
 
 public class EmberParticle extends SpriteBillboardParticle {
     protected static final float BLINK_STEP = 0.2f;
@@ -49,24 +56,24 @@ public class EmberParticle extends SpriteBillboardParticle {
         float f = (float) (MathHelper.lerp(tickDelta, this.prevPosX, this.x) - vec3d.getX());
         float g = (float) (MathHelper.lerp(tickDelta, this.prevPosY, this.y) - vec3d.getY());
         float h = (float) (MathHelper.lerp(tickDelta, this.prevPosZ, this.z) - vec3d.getZ());
-        Quaternion quaternion2;
+        Quaternionf quaternion2;
         if (this.angle == 0.0F) {
             quaternion2 = camera.getRotation();
         } else {
-            quaternion2 = new Quaternion(camera.getRotation());
+            quaternion2 = new Quaternionf(camera.getRotation());
             float i = MathHelper.lerp(tickDelta, this.prevAngle, this.angle);
-            quaternion2.hamiltonProduct(Vec3f.POSITIVE_Z.getRadialQuaternion(i));
+            quaternion2.mul(new Quaternionf(0, 0, sin(i / 2.0F), cos(i / 2.0F)));
         }
 
-        Vec3f Vec3f = new Vec3f(-1.0F, -1.0F, 0.0F);
+        Vector3f Vec3f = new Vector3f(-1.0F, -1.0F, 0.0F);
         Vec3f.rotate(quaternion2);
-        Vec3f[] Vec3fs = new Vec3f[]{new Vec3f(-1.0F, -1.0F, 0.0F), new Vec3f(-1.0F, 1.0F, 0.0F), new Vec3f(1.0F, 1.0F, 0.0F), new Vec3f(1.0F, -1.0F, 0.0F)};
+        Vector3f[] Vec3fs = new Vector3f[]{new Vector3f(-1.0F, -1.0F, 0.0F), new Vector3f(-1.0F, 1.0F, 0.0F), new Vector3f(1.0F, 1.0F, 0.0F), new Vector3f(1.0F, -1.0F, 0.0F)};
         float j = this.getSize(tickDelta);
 
         for (int k = 0; k < 4; ++k) {
-            Vec3f Vec3f2 = Vec3fs[k];
+            Vector3f Vec3f2 = Vec3fs[k];
             Vec3f2.rotate(quaternion2);
-            Vec3f2.scale(j);
+            Vec3f2.mul(j);
             Vec3f2.add(f, g, h);
         }
 
@@ -77,10 +84,10 @@ public class EmberParticle extends SpriteBillboardParticle {
         int l = 15728880;
         float a = Math.min(1f, Math.max(0f, this.alpha));
 
-        vertexConsumer.vertex(Vec3fs[0].getX(), Vec3fs[0].getY(), Vec3fs[0].getZ()).texture(maxU, maxV).color(red, green, blue, a).light(l).next();
-        vertexConsumer.vertex(Vec3fs[1].getX(), Vec3fs[1].getY(), Vec3fs[1].getZ()).texture(maxU, minV).color(red, green, blue, a).light(l).next();
-        vertexConsumer.vertex(Vec3fs[2].getX(), Vec3fs[2].getY(), Vec3fs[2].getZ()).texture(minU, minV).color(red, green, blue, a).light(l).next();
-        vertexConsumer.vertex(Vec3fs[3].getX(), Vec3fs[3].getY(), Vec3fs[3].getZ()).texture(minU, maxV).color(red, green, blue, a).light(l).next();
+        vertexConsumer.vertex(Vec3fs[0].x(), Vec3fs[0].y(), Vec3fs[0].z()).texture(maxU, maxV).color(red, green, blue, a).light(l).next();
+        vertexConsumer.vertex(Vec3fs[1].x(), Vec3fs[1].y(), Vec3fs[1].z()).texture(maxU, minV).color(red, green, blue, a).light(l).next();
+        vertexConsumer.vertex(Vec3fs[2].x(), Vec3fs[2].y(), Vec3fs[2].z()).texture(minU, minV).color(red, green, blue, a).light(l).next();
+        vertexConsumer.vertex(Vec3fs[3].x(), Vec3fs[3].y(), Vec3fs[3].z()).texture(minU, maxV).color(red, green, blue, a).light(l).next();
     }
 
     public void tick() {
@@ -89,7 +96,7 @@ public class EmberParticle extends SpriteBillboardParticle {
         this.prevPosZ = this.z;
 
         for (int i = 0; i < 5; i++) {
-            Block blockUnder = world.getBlockState(new BlockPos(this.x, this.y - i, this.z)).getBlock();
+            Block blockUnder = world.getBlockState(new BlockPos((int) this.x, (int) (this.y - i), (int) this.z)).getBlock();
             if (blockUnder instanceof CampfireBlock || blockUnder instanceof FireBlock) {
                 this.velocityY += 0.01f / (i + 1);
                 break;
@@ -128,7 +135,7 @@ public class EmberParticle extends SpriteBillboardParticle {
         velocityX = (0.3) * velocityX + (0.1) * targetVector.x * 3;
         velocityZ = (0.3) * velocityZ + (0.1) * targetVector.z * 3;
 
-        if (!new BlockPos(x, y, z).equals(this.getTargetPosition())) {
+        if (!new BlockPos((int) x, (int) y, (int) z).equals(this.getTargetPosition())) {
             this.move(velocityX, velocityY, velocityZ);
         }
     }
@@ -137,8 +144,8 @@ public class EmberParticle extends SpriteBillboardParticle {
         // Behaviour
         double groundLevel = 0;
         for (int i = 0; i < 20; i++) {
-            BlockState checkedBlock = this.world.getBlockState(new BlockPos(this.x, this.y - i, this.z));
-            if (!checkedBlock.getBlock().canMobSpawnInside()) {
+            BlockState checkedBlock = this.world.getBlockState(new BlockPos((int) this.x, (int) (this.y - i), (int) this.z));
+            if (!checkedBlock.getBlock().canMobSpawnInside(checkedBlock)) {
                 groundLevel = this.y - i;
             }
             if (groundLevel != 0) break;
@@ -152,7 +159,7 @@ public class EmberParticle extends SpriteBillboardParticle {
     }
 
     public BlockPos getTargetPosition() {
-        return new BlockPos(this.xTarget, this.yTarget, this.zTarget);
+        return new BlockPos((int) this.xTarget, (int) this.yTarget, (int) this.zTarget);
     }
 
     @Environment(EnvType.CLIENT)
