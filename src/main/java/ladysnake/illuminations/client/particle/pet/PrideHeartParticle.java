@@ -8,7 +8,7 @@ import net.minecraft.client.particle.Particle;
 import net.minecraft.client.particle.ParticleFactory;
 import net.minecraft.client.particle.SpriteProvider;
 import net.minecraft.client.world.ClientWorld;
-import net.minecraft.particle.DefaultParticleType;
+import net.minecraft.particle.SimpleParticleType;
 import net.minecraft.util.Identifier;
 import org.jetbrains.annotations.Nullable;
 
@@ -25,7 +25,7 @@ public class PrideHeartParticle extends PlayerLanternParticle {
     }
 
     @Environment(EnvType.CLIENT)
-    public static class DefaultFactory implements ParticleFactory<DefaultParticleType> {
+    public static class DefaultFactory implements ParticleFactory<SimpleParticleType> {
         private final Identifier texture;
         private final float red;
         private final float green;
@@ -40,7 +40,7 @@ public class PrideHeartParticle extends PlayerLanternParticle {
 
         @Nullable
         @Override
-        public Particle createParticle(DefaultParticleType parameters, ClientWorld world, double x, double y, double z, double velocityX, double velocityY, double velocityZ) {
+        public Particle createParticle(SimpleParticleType parameters, ClientWorld world, double x, double y, double z, double velocityX, double velocityY, double velocityZ) {
             return new PrideHeartParticle(world, x, y, z, this.texture, this.red, this.green, this.blue);
         }
     }

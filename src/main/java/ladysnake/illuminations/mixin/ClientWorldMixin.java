@@ -39,7 +39,7 @@ public abstract class ClientWorldMixin extends World {
     }
 
     @Inject(method = "randomBlockDisplayTick", slice = @Slice(from = @At(value = "INVOKE", target = "Lnet/minecraft/world/biome/Biome;getParticleConfig()Ljava/util/Optional;")),
-            at = @At(value = "INVOKE", target = "Ljava/util/Optional;ifPresent(Ljava/util/function/Consumer;)V", ordinal = 0, shift = At.Shift.AFTER))
+        at = @At(value = "INVOKE", target = "Ljava/util/Optional;ifPresent(Ljava/util/function/Consumer;)V", ordinal = 0, shift = At.Shift.AFTER))
     private void randomBlockDisplayTick(int centerX, int centerY, int centerZ, int radius, Random random, @Coerce Object blockParticle, BlockPos.Mutable blockPos, CallbackInfo ci) {
         BlockPos.Mutable pos = blockPos.add((int) (this.random.nextGaussian() * 50), (int) (this.random.nextGaussian() * 25), (int) (this.random.nextGaussian() * 50)).mutableCopy();
 
@@ -55,7 +55,7 @@ public abstract class ClientWorldMixin extends World {
 
         // spooky eyes
         if (Illuminations.EYES_LOCATION_PREDICATE.test(this, pos)
-                && random.nextFloat() <= Config.getEyesInTheDarkSpawnRate().spawnRate) {
+            && random.nextFloat() <= Config.getEyesInTheDarkSpawnRate().spawnRate) {
             this.addParticle(Illuminations.EYES, (double) pos.getX() + 0.5, (double) pos.getY() + 0.5, (double) pos.getZ() + 0.5, 0.0D, 0.0D, 0.0D);
         }
 
@@ -70,7 +70,7 @@ public abstract class ClientWorldMixin extends World {
         if (illuminationDataSet != null) {
             for (IlluminationData illuminationData : illuminationDataSet) {
                 if (illuminationData.locationSpawnPredicate().test(this, pos)
-                        && illuminationData.shouldAddParticle(this.random)) {
+                    && illuminationData.shouldAddParticle(this.random)) {
                     this.addParticle(illuminationData.illuminationType(), pos.getX(), pos.getY(), pos.getZ(), 0.0D, 0.0D, 0.0D);
                 }
             }
@@ -83,5 +83,4 @@ public abstract class ClientWorldMixin extends World {
             Illuminations.loadPlayerCosmetics();
         }
     }
-
 }

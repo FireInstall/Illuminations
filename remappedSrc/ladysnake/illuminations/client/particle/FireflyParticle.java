@@ -9,7 +9,7 @@ import net.minecraft.client.particle.*;
 import net.minecraft.client.render.Camera;
 import net.minecraft.client.render.VertexConsumer;
 import net.minecraft.client.world.ClientWorld;
-import net.minecraft.particle.DefaultParticleType;
+import net.minecraft.particle.SimpleParticleType;
 import net.minecraft.registry.Registries;
 import net.minecraft.registry.RegistryKeys;
 import net.minecraft.registry.entry.RegistryEntry;
@@ -253,14 +253,14 @@ public class FireflyParticle extends SpriteBillboardParticle {
     }
 
     @Environment(EnvType.CLIENT)
-    public static class DefaultFactory implements ParticleFactory<DefaultParticleType> {
+    public static class DefaultFactory implements ParticleFactory<SimpleParticleType> {
         private final SpriteProvider spriteProvider;
 
         public DefaultFactory(SpriteProvider spriteProvider) {
             this.spriteProvider = spriteProvider;
         }
 
-        public Particle createParticle(DefaultParticleType defaultParticleType, ClientWorld clientWorld, double d, double e, double f, double g, double h, double i) {
+        public Particle createParticle(SimpleParticleType defaultParticleType, ClientWorld clientWorld, double d, double e, double f, double g, double h, double i) {
             return new FireflyParticle(clientWorld, d, e, f, g, h, i, this.spriteProvider);
         }
     }

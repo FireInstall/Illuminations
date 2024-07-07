@@ -14,7 +14,7 @@ import net.minecraft.client.util.math.MatrixStack;
 import net.minecraft.util.Identifier;
 
 public class LanternModel extends Model {
-    public static final EntityModelLayer MODEL_LAYER = new EntityModelLayer(new Identifier(Illuminations.MODID, "lantern"), "main");
+    public static final EntityModelLayer MODEL_LAYER = new EntityModelLayer(Identifier.of(Illuminations.MODID, "lantern"), "main");
 
     private final ModelPart lantern;
 
@@ -40,7 +40,7 @@ public class LanternModel extends Model {
     }
 
     @Override
-    public void render(MatrixStack matrixStack, VertexConsumer buffer, int packedLight, int packedOverlay, float red, float green, float blue, float alpha) {
+    public void render(MatrixStack matrixStack, VertexConsumer buffer, int packedLight, int packedOverlay, int color) {
         lantern.render(matrixStack, buffer, packedLight, packedOverlay);
     }
 }

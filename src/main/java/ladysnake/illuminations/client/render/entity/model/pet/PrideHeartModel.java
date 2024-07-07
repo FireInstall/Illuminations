@@ -14,7 +14,7 @@ import net.minecraft.client.util.math.MatrixStack;
 import net.minecraft.util.Identifier;
 
 public class PrideHeartModel extends Model {
-    public static final EntityModelLayer MODEL_LAYER = new EntityModelLayer(new Identifier(Illuminations.MODID, "pride_heart"), "main");
+    public static final EntityModelLayer MODEL_LAYER = new EntityModelLayer(Identifier.of(Illuminations.MODID, "pride_heart"), "main");
 
     private final ModelPart heart;
 
@@ -47,7 +47,7 @@ public class PrideHeartModel extends Model {
     }
 
     @Override
-    public void render(MatrixStack matrixStack, VertexConsumer buffer, int packedLight, int packedOverlay, float red, float green, float blue, float alpha) {
+    public void render(MatrixStack matrixStack, VertexConsumer buffer, int packedLight, int packedOverlay, int color) {
         heart.render(matrixStack, buffer, packedLight, packedOverlay);
     }
 }

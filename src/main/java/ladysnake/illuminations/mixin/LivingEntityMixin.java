@@ -7,6 +7,7 @@ import net.minecraft.entity.Entity;
 import net.minecraft.entity.EntityType;
 import net.minecraft.entity.LivingEntity;
 import net.minecraft.entity.damage.DamageSource;
+import net.minecraft.potion.Potion;
 import net.minecraft.sound.SoundCategory;
 import net.minecraft.sound.SoundEvents;
 import net.minecraft.world.World;
@@ -26,11 +27,11 @@ public abstract class LivingEntityMixin extends Entity {
     }
 
     @Shadow
-    public abstract boolean isUndead();
+    public abstract boolean hasInvertedHealingAndHarm();
 
     @Inject(method = "onDeath", at = @At("RETURN"))
     public void onDeath(DamageSource source, CallbackInfo callbackInfo) {
-        if (this.isUndead() && random.nextInt(5) == 0 && Illuminations.isNightTime(this.getWorld()) && ((Config.getHalloweenFeatures() == HalloweenFeatures.ENABLE && LocalDate.now().getMonth() == Month.OCTOBER) || Config.getHalloweenFeatures() == HalloweenFeatures.ALWAYS)) {
+        if (this.hasInvertedHealingAndHarm() && random.nextInt(5) == 0 && Illuminations.isNightTime(this.getWorld()) && ((Config.getHalloweenFeatures() == HalloweenFeatures.ENABLE && LocalDate.now().getMonth() == Month.OCTOBER) || Config.getHalloweenFeatures() == HalloweenFeatures.ALWAYS)) {
             this.getWorld().playSound(null, this.getBlockPos(), SoundEvents.ENTITY_VEX_CHARGE, SoundCategory.AMBIENT, 1.0f, 0.8f);
 
             this.getWorld().addParticle(Illuminations.POLTERGEIST, true, this.getX() + 0.5, this.getEyeY(), this.getZ(), 0f, 0f, 0f);

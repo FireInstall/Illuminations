@@ -14,7 +14,7 @@ import net.minecraft.client.util.math.MatrixStack;
 import net.minecraft.util.Identifier;
 
 public class WillOWispModel extends Model {
-    public static final EntityModelLayer MODEL_LAYER = new EntityModelLayer(new Identifier(Illuminations.MODID, "will_o_wisp"), "main");
+    public static final EntityModelLayer MODEL_LAYER = new EntityModelLayer(Identifier.of(Illuminations.MODID, "will_o_wisp"), "main");
 
     private final ModelPart skull;
 
@@ -37,7 +37,7 @@ public class WillOWispModel extends Model {
     }
 
     @Override
-    public void render(MatrixStack matrixStack, VertexConsumer buffer, int packedLight, int packedOverlay, float red, float green, float blue, float alpha) {
+    public void render(MatrixStack matrixStack, VertexConsumer buffer, int packedLight, int packedOverlay, int color) {
         skull.render(matrixStack, buffer, packedLight, packedOverlay);
     }
 }

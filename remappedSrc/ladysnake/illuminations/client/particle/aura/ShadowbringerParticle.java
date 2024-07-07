@@ -8,7 +8,7 @@ import net.minecraft.client.particle.ParticleFactory;
 import net.minecraft.client.particle.SpriteProvider;
 import net.minecraft.client.world.ClientWorld;
 import net.minecraft.fluid.Fluids;
-import net.minecraft.particle.DefaultParticleType;
+import net.minecraft.particle.SimpleParticleType;
 import net.minecraft.util.math.BlockPos;
 
 public class ShadowbringerParticle extends ChorusPetalParticle {
@@ -72,14 +72,14 @@ public class ShadowbringerParticle extends ChorusPetalParticle {
     }
 
     @Environment(EnvType.CLIENT)
-    public static class DefaultFactory implements ParticleFactory<DefaultParticleType> {
+    public static class DefaultFactory implements ParticleFactory<SimpleParticleType> {
         private final SpriteProvider spriteProvider;
 
         public DefaultFactory(SpriteProvider spriteProvider) {
             this.spriteProvider = spriteProvider;
         }
 
-        public Particle createParticle(DefaultParticleType defaultParticleType, ClientWorld clientWorld, double d, double e, double f, double g, double h, double i) {
+        public Particle createParticle(SimpleParticleType defaultParticleType, ClientWorld clientWorld, double d, double e, double f, double g, double h, double i) {
             return new ShadowbringerParticle(clientWorld, d, e, f, g, h, i, this.spriteProvider);
         }
     }

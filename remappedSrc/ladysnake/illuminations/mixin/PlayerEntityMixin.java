@@ -8,7 +8,7 @@ import net.minecraft.client.MinecraftClient;
 import net.minecraft.entity.EntityType;
 import net.minecraft.entity.LivingEntity;
 import net.minecraft.entity.player.PlayerEntity;
-import net.minecraft.particle.DefaultParticleType;
+import net.minecraft.particle.SimpleParticleType;
 import net.minecraft.world.World;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
@@ -35,7 +35,7 @@ public abstract class PlayerEntityMixin extends LivingEntity {
                     if (Illuminations.AURAS_DATA.containsKey(playerAura)) {
                         AuraData aura = Illuminations.AURAS_DATA.get(playerAura);
                         if (Illuminations.AURAS_DATA.get(playerAura).shouldAddParticle(this.random, this.age)) {
-                            this.method_48926().addParticle(aura.particle(), this.getX(), this.getY(), this.getZ(), 0, 0, 0);
+                            this.getWorld().addParticle(aura.particle(), this.getX(), this.getY(), this.getZ(), 0, 0, 0);
                         }
                     }
                 }
@@ -48,9 +48,9 @@ public abstract class PlayerEntityMixin extends LivingEntity {
                 //noinspection ConstantConditions
                 if (((Config.getViewAurasFP() || MinecraftClient.getInstance().gameRenderer.getCamera().isThirdPerson()) || MinecraftClient.getInstance().player != (Object) this) && !this.isInvisible()) {
                     if (Illuminations.PETS_DATA.containsKey(playerPet)) {
-                        DefaultParticleType overhead = Illuminations.PETS_DATA.get(playerPet);
+                        SimpleParticleType overhead = Illuminations.PETS_DATA.get(playerPet);
                         if (this.age % 20 == 0) {
-                            this.method_48926().addParticle(overhead, this.getX() + Math.cos(this.bodyYaw / 50) * 0.5, this.getY() + this.getHeight() + 0.5f + Math.sin(this.age / 12f) / 12f, this.getZ() - Math.cos(this.bodyYaw / 50) * 0.5, 0, 0, 0);
+                            this.getWorld().addParticle(overhead, this.getX() + Math.cos(this.bodyYaw / 50) * 0.5, this.getY() + this.getHeight() + 0.5f + Math.sin(this.age / 12f) / 12f, this.getZ() - Math.cos(this.bodyYaw / 50) * 0.5, 0, 0, 0);
                         }
                     }
                 }

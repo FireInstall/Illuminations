@@ -7,8 +7,7 @@ import net.minecraft.client.particle.Particle;
 import net.minecraft.client.particle.ParticleFactory;
 import net.minecraft.client.particle.SpriteProvider;
 import net.minecraft.client.world.ClientWorld;
-import net.minecraft.particle.DefaultParticleType;
-
+import net.minecraft.particle.SimpleParticleType;
 import java.util.concurrent.ThreadLocalRandom;
 
 public class PrismarineAuraParticle extends PrismarineCrystalParticle {
@@ -55,14 +54,14 @@ public class PrismarineAuraParticle extends PrismarineCrystalParticle {
     }
 
     @Environment(EnvType.CLIENT)
-    public static class DefaultFactory implements ParticleFactory<DefaultParticleType> {
+    public static class DefaultFactory implements ParticleFactory<SimpleParticleType> {
         private final SpriteProvider spriteProvider;
 
         public DefaultFactory(SpriteProvider spriteProvider) {
             this.spriteProvider = spriteProvider;
         }
 
-        public Particle createParticle(DefaultParticleType defaultParticleType, ClientWorld clientWorld, double d, double e, double f, double g, double h, double i) {
+        public Particle createParticle(SimpleParticleType defaultParticleType, ClientWorld clientWorld, double d, double e, double f, double g, double h, double i) {
             return new PrismarineAuraParticle(clientWorld, d, e, f, g, h, i, this.spriteProvider);
         }
     }

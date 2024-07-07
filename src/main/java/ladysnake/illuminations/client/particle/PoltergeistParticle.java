@@ -16,8 +16,8 @@ import net.minecraft.client.util.math.MatrixStack;
 import net.minecraft.client.world.ClientWorld;
 import net.minecraft.entity.Entity;
 import net.minecraft.particle.BlockStateParticleEffect;
-import net.minecraft.particle.DefaultParticleType;
 import net.minecraft.particle.ParticleTypes;
+import net.minecraft.particle.SimpleParticleType;
 import net.minecraft.sound.SoundCategory;
 import net.minecraft.sound.SoundEvents;
 import net.minecraft.util.Identifier;
@@ -62,7 +62,7 @@ public class PoltergeistParticle extends WillOWispParticle {
         VertexConsumerProvider.Immediate immediate = MinecraftClient.getInstance().getBufferBuilders().getEntityVertexConsumers();
         VertexConsumer vertexConsumer2 = immediate.getBuffer(this.layer);
         if (alpha > 0) {
-            this.model.render(matrixStack, vertexConsumer2, 15728880, OverlayTexture.DEFAULT_UV, 1.0F, 1.0F, 1.0F, 0.5f);
+            this.model.render(matrixStack, vertexConsumer2, 15728880, OverlayTexture.DEFAULT_UV);
         }
         immediate.draw();
     }
@@ -186,7 +186,7 @@ public class PoltergeistParticle extends WillOWispParticle {
     }
 
     @Environment(EnvType.CLIENT)
-    public static class DefaultFactory implements ParticleFactory<DefaultParticleType> {
+    public static class DefaultFactory implements ParticleFactory<SimpleParticleType> {
         private final Identifier texture;
         private final float red;
         private final float green;
@@ -207,7 +207,7 @@ public class PoltergeistParticle extends WillOWispParticle {
 
         @Nullable
         @Override
-        public Particle createParticle(DefaultParticleType parameters, ClientWorld world, double x, double y, double z, double velocityX, double velocityY, double velocityZ) {
+        public Particle createParticle(SimpleParticleType parameters, ClientWorld world, double x, double y, double z, double velocityX, double velocityY, double velocityZ) {
             return new PoltergeistParticle(world, x, y, z, this.texture, this.red, this.green, this.blue, this.redEvolution, this.greenEvolution, this.blueEvolution);
         }
     }

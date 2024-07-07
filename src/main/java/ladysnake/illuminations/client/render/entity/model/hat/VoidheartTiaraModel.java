@@ -9,7 +9,7 @@ import net.minecraft.client.util.math.MatrixStack;
 import net.minecraft.util.Identifier;
 
 public class VoidheartTiaraModel extends OverheadModel {
-    public static final EntityModelLayer MODEL_LAYER = new EntityModelLayer(new Identifier(Illuminations.MODID, "voidheart_tiara"), "main");
+    public static final EntityModelLayer MODEL_LAYER = new EntityModelLayer(Identifier.of(Illuminations.MODID, "voidheart_tiara"), "main");
 
     public VoidheartTiaraModel(EntityRendererFactory.Context ctx) {
         super(ctx, MODEL_LAYER);
@@ -35,11 +35,6 @@ public class VoidheartTiaraModel extends OverheadModel {
         modelPartData2.addChild("east_r1", ModelPartBuilder.create().uv(0, 25).cuboid(-5.0F, -11.0F, 3.0F, 10.0F, 11.0F, 1.0F, new Dilation(-0.5F)), ModelTransform.pivot(0.0F, -6.0F, 1.0F));
         modelPartData2.addChild("south_r1", ModelPartBuilder.create().uv(12, 39).cuboid(-5.0F, -8.0F, 3.0F, 9.0F, 8.0F, 1.0F, new Dilation(-0.5F)), ModelTransform.pivot(0.5F, -7.0F, 0.0F));
         return TexturedModelData.of(modelData, 48, 48);
-    }
-
-    @Override
-    public void render(MatrixStack matrixStack, VertexConsumer buffer, int packedLight, int packedOverlay, float red, float green, float blue, float alpha) {
-        head.render(matrixStack, buffer, packedLight, packedOverlay);
     }
 
     public void setRotationAngle(ModelPart bone, float x, float y, float z) {

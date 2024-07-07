@@ -9,7 +9,7 @@ import net.minecraft.client.util.math.MatrixStack;
 import net.minecraft.util.Identifier;
 
 public class TiaraModel extends OverheadModel {
-    public static final EntityModelLayer MODEL_LAYER = new EntityModelLayer(new Identifier(Illuminations.MODID, "tiara"), "main");
+    public static final EntityModelLayer MODEL_LAYER = new EntityModelLayer(Identifier.of(Illuminations.MODID, "tiara"), "main");
 
     public TiaraModel(EntityRendererFactory.Context ctx) {
         super(ctx, MODEL_LAYER);
@@ -35,11 +35,6 @@ public class TiaraModel extends OverheadModel {
         modelPartData2.addChild("east_r1", ModelPartBuilder.create().uv(6, 23).cuboid(-4.9F, -6.1F, 3.03F, 10.0F, 8.0F, 1.0F, new Dilation(-0.5F)), ModelTransform.pivot(0.0F, -6.0F, 0.0F));
         modelPartData2.addChild("south_r1", ModelPartBuilder.create().uv(7, 32).cuboid(-4.0F, -6.3F, 3.2F, 8.0F, 8.0F, 1.0F, new Dilation(-0.75f)), ModelTransform.pivot(0.0F, -6.0F, 0.0F));
         return TexturedModelData.of(modelData, 32, 48);
-    }
-
-    @Override
-    public void render(MatrixStack matrixStack, VertexConsumer buffer, int packedLight, int packedOverlay, float red, float green, float blue, float alpha) {
-        head.render(matrixStack, buffer, packedLight, packedOverlay);
     }
 
     public void setRotationAngle(ModelPart bone, float x, float y, float z) {

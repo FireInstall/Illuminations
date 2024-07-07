@@ -8,7 +8,7 @@ import net.minecraft.client.MinecraftClient;
 import net.minecraft.entity.EntityType;
 import net.minecraft.entity.LivingEntity;
 import net.minecraft.entity.player.PlayerEntity;
-import net.minecraft.particle.DefaultParticleType;
+import net.minecraft.particle.SimpleParticleType;
 import net.minecraft.world.World;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
@@ -48,7 +48,7 @@ public abstract class PlayerEntityMixin extends LivingEntity {
                 //noinspection ConstantConditions
                 if (((Config.getViewAurasFP() || MinecraftClient.getInstance().gameRenderer.getCamera().isThirdPerson()) || MinecraftClient.getInstance().player != (Object) this) && !this.isInvisible()) {
                     if (Illuminations.PETS_DATA.containsKey(playerPet)) {
-                        DefaultParticleType overhead = Illuminations.PETS_DATA.get(playerPet);
+                        SimpleParticleType overhead = Illuminations.PETS_DATA.get(playerPet);
                         if (this.age % 20 == 0) {
                             this.getWorld().addParticle(overhead, this.getX() + Math.cos(this.bodyYaw / 50) * 0.5, this.getY() + this.getHeight() + 0.5f + Math.sin(this.age / 12f) / 12f, this.getZ() - Math.cos(this.bodyYaw / 50) * 0.5, 0, 0, 0);
                         }

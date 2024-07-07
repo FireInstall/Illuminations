@@ -16,8 +16,8 @@ import net.minecraft.client.util.math.MatrixStack;
 import net.minecraft.client.world.ClientWorld;
 import net.minecraft.entity.Entity;
 import net.minecraft.particle.BlockStateParticleEffect;
-import net.minecraft.particle.DefaultParticleType;
 import net.minecraft.particle.ParticleTypes;
+import net.minecraft.particle.SimpleParticleType;
 import net.minecraft.registry.tag.BlockTags;
 import net.minecraft.sound.SoundCategory;
 import net.minecraft.sound.SoundEvents;
@@ -92,7 +92,7 @@ public class WillOWispParticle extends Particle {
         VertexConsumerProvider.Immediate immediate = MinecraftClient.getInstance().getBufferBuilders().getEntityVertexConsumers();
         VertexConsumer vertexConsumer2 = immediate.getBuffer(GlowyRenderLayer.get(texture));
         if (alpha > 0) {
-            this.model.render(matrixStack, vertexConsumer2, 15728880, OverlayTexture.DEFAULT_UV, 1.0F, 1.0F, 1.0F, 1.0f);
+            this.model.render(matrixStack, vertexConsumer2, 15728880, OverlayTexture.DEFAULT_UV);
         }
         immediate.draw();
     }
@@ -112,7 +112,7 @@ public class WillOWispParticle extends Particle {
                 this.world.addParticle(new WispTrailParticleEffect(this.red, this.green, this.blue, this.redEvolution, this.greenEvolution, this.blueEvolution), this.x + random.nextGaussian() / 15, this.y + random.nextGaussian() / 15, this.z + random.nextGaussian() / 15, 0, 0, 0);
                 this.world.addParticle(new BlockStateParticleEffect(ParticleTypes.BLOCK, Blocks.SOUL_SAND.getDefaultState()), this.x + random.nextGaussian() / 10, this.y + random.nextGaussian() / 10, this.z + random.nextGaussian() / 10, random.nextGaussian() / 20, random.nextGaussian() / 20, random.nextGaussian() / 20);
             }
-            this.world.playSound(this.x, this.y, this.z, SoundEvents.PARTICLE_SOUL_ESCAPE, SoundCategory.AMBIENT, 1.0f, 1.5f, true);
+            this.world.playSound(this.x, this.y, this.z, SoundEvents.PARTICLE_SOUL_ESCAPE.value(), SoundCategory.AMBIENT, 1.0f, 1.5f, true);
             this.world.playSound(this.x, this.y, this.z, SoundEvents.BLOCK_SOUL_SAND_BREAK, SoundCategory.AMBIENT, 1.0f, 1.0f, true);
             this.markDead();
         }
@@ -151,7 +151,7 @@ public class WillOWispParticle extends Particle {
         }
 
         if (random.nextInt(20) == 0) {
-            this.world.playSound(this.x, this.y, this.z, SoundEvents.PARTICLE_SOUL_ESCAPE, SoundCategory.AMBIENT, 1.0f, 1.5f, true);
+            this.world.playSound(this.x, this.y, this.z, SoundEvents.PARTICLE_SOUL_ESCAPE.value(), SoundCategory.AMBIENT, 1.0f, 1.5f, true);
         }
 
         BlockPos pos = new BlockPos((int) this.x, (int) this.y, (int) this.z);
@@ -216,7 +216,7 @@ public class WillOWispParticle extends Particle {
     }
 
     @Environment(EnvType.CLIENT)
-    public static class DefaultFactory implements ParticleFactory<DefaultParticleType> {
+    public static class DefaultFactory implements ParticleFactory<SimpleParticleType> {
         private final Identifier texture;
         private final float red;
         private final float green;
@@ -237,7 +237,7 @@ public class WillOWispParticle extends Particle {
 
         @Nullable
         @Override
-        public Particle createParticle(DefaultParticleType parameters, ClientWorld world, double x, double y, double z, double velocityX, double velocityY, double velocityZ) {
+        public Particle createParticle(SimpleParticleType parameters, ClientWorld world, double x, double y, double z, double velocityX, double velocityY, double velocityZ) {
             return new WillOWispParticle(world, x, y, z, this.texture, this.red, this.green, this.blue, this.redEvolution, this.greenEvolution, this.blueEvolution);
         }
     }

@@ -9,7 +9,7 @@ import net.minecraft.client.util.math.MatrixStack;
 import net.minecraft.util.Identifier;
 
 public class HaloModel extends OverheadModel {
-    public static final EntityModelLayer MODEL_LAYER = new EntityModelLayer(new Identifier(Illuminations.MODID, "halo"), "main");
+    public static final EntityModelLayer MODEL_LAYER = new EntityModelLayer(Identifier.of(Illuminations.MODID, "halo"), "main");
 
     public HaloModel(EntityRendererFactory.Context ctx) {
         super(ctx, MODEL_LAYER);
@@ -21,11 +21,6 @@ public class HaloModel extends OverheadModel {
         ModelPartData modelPartData1 = modelPartData.addChild("head", ModelPartBuilder.create().uv(0, 7).cuboid(-4.0F, -8.0F, -4.0F, 8.0F, 8.0F, 8.0F, new Dilation(-4.0f)), ModelTransform.pivot(0.0F, 0.0F, 0.0F));
         modelPartData1.addChild("halo", ModelPartBuilder.create().uv(0, 0).cuboid(-8.0F, -11.0F, 5.0F, 16.0F, 16.0F, 0.0F), ModelTransform.pivot(0.0F, -4.0F, 0.0F));
         return TexturedModelData.of(modelData, 32, 48);
-    }
-
-    @Override
-    public void render(MatrixStack matrixStack, VertexConsumer buffer, int packedLight, int packedOverlay, float red, float green, float blue, float alpha) {
-        head.render(matrixStack, buffer, packedLight, packedOverlay);
     }
 
     public void setRotationAngle(ModelPart bone, float x, float y, float z) {

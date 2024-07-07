@@ -13,7 +13,7 @@ public class OverheadData {
 
     public OverheadData(Function<EntityRendererFactory.Context, OverheadModel> model, String textureName) {
         this.model = model;
-        this.texture = new Identifier(Illuminations.MODID, "textures/entity/" + textureName + ".png");
+        this.texture = Identifier.of(Illuminations.MODID, "textures/entity/" + textureName + ".png");
     }
 
     public OverheadModel createModel(EntityRendererFactory.Context ctx) {
